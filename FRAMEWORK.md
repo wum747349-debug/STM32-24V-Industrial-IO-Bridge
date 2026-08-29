@@ -1,8 +1,8 @@
 # Framework Binding
 
 Framework Repository: wum747349-debug/Hardware-Project-Framework
-Framework Release: hardware-project-framework-v1.1.1
-Framework Commit: e139ce90b74e391a6a46e30ff7e14aebf8487b84
+Framework Release: development-v1.2.0
+Framework Commit: 4a83819efd3557cb6bb8671f6d1d1c941ef3ee63
 Project Structure Version: 1
 Repository Model: Standalone Project
 Initialization Framework Release: hardware-project-framework-v1.1.1
