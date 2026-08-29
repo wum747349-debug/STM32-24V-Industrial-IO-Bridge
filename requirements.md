@@ -58,11 +58,12 @@
 - 保留 8 路硬件通道；上一代经实际设备验证的系统行为是对 CM35 输入信号线下拉至 24 V `0V` 时输入有效。
 - Protocol / Application contract：`DataIn = 1` 表示 Active，`DataIn = 0` 表示 Inactive。
 - Physical controller-output GPIO contract：`LOW = Active`，`HIGH = Inactive`；极性转换属于 STM32 firmware。
-- 上一代 2N7002 下拉实现仅作为 Legacy Design Reference；新原理图必须在 Stage 3 根据当期器件与官方资料重新 qualification。
+- 上一代 2N7002 下拉实现作为 Legacy Design Reference；用户已在 Stage 2 明确授权复用该转换思路，新原理图仍必须根据当期器件与官方资料重新 qualification。
 
 ### CM35 → STM32（OUT1–OUT8）
 
-- 保留 8 路硬件通道；上一代功能行为为 CM35 Active → optocoupler 导通 → STM32 GPIO LOW，Inactive → GPIO HIGH。
+- 保留 8 路硬件通道；Stage 2 对归档上一代原理图的检查显示，legacy readback 同样采用 2N7002 MOSFET conversion networks，而不是 optocoupler。上一版文字中的 optocoupler 描述已按实际 schematic evidence 纠正。
+- 上一代系统行为仍为 CM35 Active → STM32 GPIO LOW，Inactive → GPIO HIGH；新设计的 exact resistor values、输入保护与阈值必须在 Stage 3 结合 CM35 当期电气资料重新 qualification。
 - Protocol / Application contract：`DataOut = 1` 表示当前状态 Active，`DataOut = 0` 表示 Inactive。
 - firmware 必须执行 Active-Low → positive protocol semantic inversion。
 
@@ -140,13 +141,13 @@
 
 | ID | Question | Impact | Decision Needed By | Owner / Source | Qualification / Confirmation Plan | State |
 | --- | --- | --- | --- | --- | --- | --- |
-| OPEN-001 | USB-UART 是否进行 galvanic isolation？ | 决定 ground loop、噪声、故障传播、电源域和 BOM | Resolved in Stage 1 | 用户确认 | 采用 board-mounted USB-UART + galvanically isolated UART interface；具体 USB-UART / digital isolator 留待 Stage 2 qualification | Closed |
+| OPEN-001 | USB-UART 是否进行 galvanic isolation？ | 决定 ground loop、噪声、故障传播、电源域和 BOM | Resolved in Stage 1 | 用户确认 | 采用 board-mounted USB-UART + galvanically isolated UART interface；Stage 2 Primary 为 CH340C + ISO7721DR，Stage 3 继续核对 power-state/back-power behavior | Closed |
 | OPEN-002 | 每个传感器读取 NO only 还是 NO + NC？ | 决定 MCU 输入数量、前端通道数、端口资源与诊断能力 | Resolved in Stage 1 | 用户确认 | 每个传感器 NO + NC 均采集，4 × 2 = 8 路 MCU sensor digital inputs；具体 frontend 留待 Stage 2/3 | Closed |
-| OPEN-003 | USB connector 具体类型？ | 影响机械可靠性、装配、外壳和线缆 | Before Stage 2 selection | 用户 / Mechanical | 确认使用环境、插拔频率、线缆与 enclosure 约束后比较候选 | Open |
+| OPEN-003 | USB connector 具体类型？ | 影响机械可靠性、装配、外壳和线缆 | Before Stage 2 selection | 用户 / Mechanical | Stage 2 conditional candidate 为 TYPE-C-31-M-12；待 enclosure / 板边机械约束确认后才能关闭 | Open |
 | OPEN-004 | CM35 / Sensor / Power terminal 最终 pitch 和系列？ | 影响板尺寸、现场接线、装配方式与成本 | Select in Stage 2; freeze before Stage 5 | 用户 / Mechanical / JLCPCB capability | 比较约 5.0/5.08 mm 候选、pluggable 需求与 PCBA 可行性 | Open |
-| OPEN-005 | 24 V input protection architecture？ | 影响反接、surge/transient 能力、压降、热与安全 | Stage 2 | Stage 2 qualification | 根据现场风险和官方资料比较 fuse/PTC、TVS、反接等架构 | Open |
-| OPEN-006 | 24 V → 3.3 V power architecture？ | 影响效率、热、噪声、布局、成本与可采购性 | Stage 2 | Stage 2 qualification | 建立负载预算后基于官方资料和 JLCPCB/LCSC 可用性选型 | Open |
+| OPEN-005 | 24 V input protection architecture？ | 影响反接、surge/transient 能力、压降、热与安全 | Resolved in Stage 2 | 用户 measurement + Stage 2 qualification | 采用 input overcurrent element + STPS2H100A series reverse-polarity protection + SMBJ30A-TR TVS + protected 24V bus；exact fuse/PTC rating、surge waveform/source impedance 与 thermal margin 留待 Stage 3 计算 | Closed |
+| OPEN-006 | 24 V → 3.3 V power architecture？ | 影响效率、热、噪声、布局、成本与可采购性 | Resolved in Stage 2 | Stage 2 qualification | Primary 采用 LMR36510FADDAR 65 V / 1 A class synchronous buck；exact inductor/FB/capacitors/load budget/thermal 留待 Stage 3 | Closed |
 | OPEN-007 | exact GPIO / USART pin allocation？ | 影响通道数量、boot/debug、安全状态与 PCB routing | Stage 3 | Stage 3 design | 按已确认的 8 路 sensor inputs 与隔离 UART 架构进行资源分配、启动状态和冲突检查 | Open |
-| OPEN-008 | exact isolation / sensor-interface components？ | 影响输入阈值、保护、速度、功耗、隔离与通道密度 | Select in Stage 2; qualify in Stage 3 | Stage 2/3 qualification | 根据冻结架构、官方资料、计算和环境约束选择并验证 | Open |
+| OPEN-008 | exact isolation / sensor-interface components？ | 影响输入阈值、保护、速度、功耗、隔离与通道密度 | Select in Stage 2; qualify in Stage 3 | Stage 2/3 qualification | Stage 2 Primary 已确定 ISO7721DR 与 Nexperia 2N7002,215；CM35/Sensor exact resistor、filter、ESD/transient/current-limiting network 仍需官方外设电气资料与 Stage 3 qualification | Open |
 | OPEN-009 | enclosure / PCB size / mounting constraints？ | 影响 connector 布局、板框、安装孔、散热和可维护性 | Collect before Stage 2; freeze before Stage 5 | 用户 / Mechanical | 收集可用空间、安装方式、禁布区、固定点及接线方向并确认 | Open |
 | OPEN-010 | 是否需要 indicator LEDs / additional diagnostic interface？ | 影响 GPIO、电源预算、面板可见性和调试效率 | Before Stage 2 selection | 用户 / Serviceability | 定义必须显示的 power/communication/I/O/fault 状态和可见性需求 | Open |
