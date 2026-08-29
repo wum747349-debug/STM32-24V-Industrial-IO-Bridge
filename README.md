@@ -32,4 +32,4 @@ Hardware Revision: TBD
 
 ## 下一步（Next Step）
 
-开始实际 Stage 2 工作时，从绑定 Framework snapshot 读取 `skills/hardware-component-selection/SKILL.md`，按真实候选与官方资料启用 `docs/component_selection_plan.md`。本次任务不开始器件选型。
+开始实际 Stage 2 工作时，从绑定 Framework snapshot 读取 `skills/hardware-component-selection/SKILL.md`，按真实候选与官方资料维护 / 更新 `docs/component_selection_plan.md`。本次任务不开始器件选型。
