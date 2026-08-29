@@ -12,10 +12,11 @@ Hardware Revision: TBD
 
 - Framework binding 与初始化状态：[FRAMEWORK.md](FRAMEWORK.md)
 - 第一版 Requirements Baseline 已建立，Gate 1.5 已执行并记录 PASS，初始化状态为 `Initialized`。
-- Project 当前处于 Stage 2 — Critical Component Selection；第一轮关键器件研究已经开始，并在 [docs/component_selection_plan.md](docs/component_selection_plan.md) 记录 Primary decisions。
-- 当前 Primary 范围包括 STM32F103C8T6、CH340C、ISO7721DR、USBLC6-2SC6、Nexperia 2N7002,215、LMR36510FADDAR、STPS2H100A 与 SMBJ30A-TR；USB-C receptacle 为 mechanical-conditional candidate。
+- Project 当前处于 Stage 2 — Critical Component Selection；Stage 2 selection closeout 已完成并在 [docs/component_selection_plan.md](docs/component_selection_plan.md) 记录 `PASS`，尚未开始 Stage 3 engineering work。
+- 当前 Primary 范围包括 STM32F103C8T6、CH340C、ISO7721DR、USBLC6-2SC6、Nexperia 2N7002,215、LMR36510FADDAR、0468.500NRHF、STPS2H100A 与 SMBJ30A-TR；USB-C receptacle 为 mechanical-conditional candidate。
 - 24 V source 当前有用户提供的 `MS-120-24` 24 V / 5 A / 120 W 图片证据，且用户已用万用表确认实际输出约 24 V、观察较稳定；该 evidence 不替代官方 tolerance / surge specification。
-- Stage 2 尚未完成：CM35 official I/O electrical data、Sensor manufacturer provenance、exact input overcurrent rating、mechanical/terminal decisions、GPIO/USART allocation 与 ordinary peripherals 仍未关闭。
+- Stage 2 已建立 `0.225 A` 的 24 V continuous design envelope，并将 Littelfuse `0468.500NRHF` 0.5 A / 63 V Slo-Blo fuse 选为 F1 Primary；60 V PPTC 仅作为有温度限制的 Alternate architecture。
+- CM35 Stage-2 topology qualification 已关闭；Sensor 以用户提供 manual 支持 conditional closeout。exact interface parameters、GPIO/USART、普通外围、connector mechanical acceptance 与 PCB mechanics 均按真实 lifecycle 后置，不是 Stage 2 blocker。
 - Hardware Revision 仍为 `TBD`；没有声称 `.SchDoc` / `.PcbDoc`、ERC、DRC、Manufacturing、Bring-up 或 Test 已完成。
 
 ## 项目事实入口（Project Facts）
@@ -36,4 +37,4 @@ Hardware Revision: TBD
 
 ## 下一步（Next Step）
 
-继续 Stage 2 qualification 收口：优先补齐 CM35 / Sensor external-interface evidence，完成 final board load budget 与 input overcurrent device sizing，确认 USB-C / terminal mechanical constraints，并对当前 Primary / Alternate 做 purchase-time sourcing recheck。达到 Stage 2 exit requirements 前不自动进入 Stage 3，也不创建或声称 EDA implementation 已完成。
+Stage 2 已满足退出条件。下一次明确启动 Stage 3 时，先建立首个真实 module design record，再进行模块连接、参数设计和 EDA capture；本次 closeout 不创建 Stage 3 records，不计算 exact resistor / RC / buck magnetics，也不创建或修改 `.SchDoc` / `.PcbDoc`。采购或 PCBA BOM submission 前对 Primary / Alternate 做 lightweight availability recheck。

@@ -8,8 +8,8 @@
 
 ## Out of Scope
 
-- 本阶段不选择具体 USB-UART、digital isolator、DC/DC、TVS、反接保护、保险/PTC、Sensor Input Frontend 或端子 MPN。
-- 不进行 Stage 2 Component Selection、Stage 3 Schematic Design 或任何后续 Stage 工作。
+- Requirements Baseline 不负责维护器件候选或最终 BOM；Stage 2 关键选型由 `docs/component_selection_plan.md` 维护。
+- exact resistor / RC、buck magnetics、GPIO/USART allocation、普通外围与逐引脚连接属于 Stage 3；connector / enclosure / PCB mechanics 在 Layout Preflight 前冻结。
 - 不创建或修改 `.SchDoc`、`.PcbDoc`，不执行 EDA drawing、PCB design、firmware implementation 或 manufacturing output。
 - 不声称 ERC、DRC、Repour、PCBA、Bring-up 或实测已完成。
 - 不把上一代 schematic / BOM 作为本项目当前 EDA authority，也不把旧器件未经重新 qualification 直接冻结为新设计。
@@ -28,9 +28,9 @@
 
 | Module | Stage 1 Responsibility |
 | --- | --- |
-| M1 — 24V Input / Protection / Low-voltage Power | 接收机器 24 V，形成受保护 24 V bus，并向机器侧低压逻辑供电；具体架构待后续阶段确定。 |
+| M1 — 24V Input / Protection / Low-voltage Power | `0468.500NRHF` F1 → `STPS2H100A` → protected 24 V bus，`SMBJ30A-TR` 跨接保护，`LMR36510FADDAR` 产生 machine-side 3.3 V；exact external values 留待 Stage 3。 |
 | M2 — STM32F103C8T6 Minimum System | 集成 MCU 本体及后续所需的供电、VDDA、reset、boot、clock、SWD、调试与安全启动边界。 |
-| M3 — USB-UART Communication | 实现 PC USB 到 STM32 UART，并在 USB-UART 与 machine-side STM32 UART 之间设置 galvanic isolation；具体器件待后续阶段确定。 |
+| M3 — USB-UART Communication | `USBLC6-2SC6` + `CH340C` 经 `ISO7721DR` 连接 machine-side STM32 UART；USB-C mechanical acceptance 与 exact USART/pins 后置。 |
 | M4 — CM35 Industrial I/O Interface | 8 路 STM32 → IN11–IN18 控制与 8 路 OUT1–OUT8 → STM32 回读。 |
 | M5 — Photoelectric Sensor Interface | 为 4 个 AN-LS18-40-N 供电，并接收每个传感器的 NO + NC，共 8 路输入；具体输入前端待后续阶段确定。 |
 | M6 — Connectors / SWD / Indicators / Test Points | 提供便于现场接线、编程、调试和安全首次上电的物理入口；指示功能范围待确认。 |
@@ -39,11 +39,11 @@
 
 - 外部机器电源为 24 V DC。
 - 24 V 输入必须经过保护后形成 protected 24V bus；该 bus 至少服务 CM35 interface、4 个光电开关与板上低压电源。
-- 板上必须产生 STM32 与机器侧逻辑所需低压电源；24 V → 3.3 V 的具体架构和器件待 Stage 2/3。
-- 必须考虑反接、surge / transient、外部工业长线与输入保护；具体 TVS、fuse/PTC、reverse-polarity 与 DC/DC 方案待定。
+- 板上采用 LMR36510FADDAR 从 protected 24 V bus 产生 STM32 与机器侧逻辑所需 3.3 V；Stage-2 output design envelope 为 0.25 A，exact magnetics / capacitors / thermal 留待 Stage 3。
+- 24 V Primary protection chain 为 `0468.500NRHF` 0.5 A / 63 V time-delay fuse、`STPS2H100A` series reverse-polarity diode 与 `SMBJ30A-TR` TVS；不得用外部 PSU 的 5 A capability 作为 PCB fuse rating。
 - USB 供电不得意外反向供电 machine-side power system。
 - 首次上电必须支持安全的限流测试流程；实际限流值与步骤待后续设计和 Bring-up 计划确定。
-- 4 个传感器由板上 protected 24V bus 供电；总功耗、电流预算与热设计待取得官方资料并在后续阶段核算。
+- 4 个传感器由板上 protected 24V bus 供电；Stage-2 暂按用户提供 manual 的 static current `≤10 mA each`，合计 provisional `≤40 mA`，manufacturer provenance 与 Stage-3 exact frontend qualification 仍未关闭。
 
 ## Interface Requirements
 
@@ -51,21 +51,22 @@
 
 - 采用 board-mounted USB-UART，尽量复用现有串口帧与 C# 上位机 communication model。
 - USB-UART 与 STM32 UART 之间必须采用 galvanically isolated UART interface；PC USB ground 与 machine-side 24 V `0V` 不直接共地。
-- USB connector 类型、USB-UART IC、digital isolator、USART/GPIO 分配及具体隔离实现均待后续阶段确定。
+- Stage-2 Primary 为 TYPE-C-31-M-12（mechanical-conditional）、CH340C、USBLC6-2SC6 与 ISO7721DR；exact USART/GPIO、USB-C mechanical acceptance、power-state 与 back-power implementation 留待对应后续阶段。
 
 ### STM32 → CM35（IN11–IN18）
 
-- 保留 8 路硬件通道；上一代经实际设备验证的系统行为是对 CM35 输入信号线下拉至 24 V `0V` 时输入有效。
+- 保留 8 路硬件通道；用户提供的 CM35 official-manual pages 确认输入信号线连接/下拉至 `24G` 时为“通”，即 active-low / sink-to-24G behavior；资料同时说明输入带抗干扰过滤，信号需保持至少约 2 ms 才能可靠识别。
 - Protocol / Application contract：`DataIn = 1` 表示 Active，`DataIn = 0` 表示 Inactive。
 - Physical controller-output GPIO contract：`LOW = Active`，`HIGH = Inactive`；极性转换属于 STM32 firmware。
 - 上一代 2N7002 下拉实现作为 Legacy Design Reference；用户已在 Stage 2 明确授权复用该转换思路，新原理图仍必须根据当期器件与官方资料重新 qualification。
 
 ### CM35 → STM32（OUT1–OUT8）
 
-- 保留 8 路硬件通道；Stage 2 对归档上一代原理图的检查显示，legacy readback 同样采用 2N7002 MOSFET conversion networks，而不是 optocoupler。上一版文字中的 optocoupler 描述已按实际 schematic evidence 纠正。
+- 保留 8 路硬件通道；用户提供的 CM35 official-manual pages 显示负载连接在 `+24 V` 与 `OUT1–OUT8` 之间，因此输出按 low-side / sinking behavior qualification；没有证据时不进一步声明内部 transistor topology。Stage 2 对归档旧原理图的检查另确认 legacy readback 使用 2N7002 MOSFET networks，而不是 optocoupler。
 - 上一代系统行为仍为 CM35 Active → STM32 GPIO LOW，Inactive → GPIO HIGH；新设计的 exact resistor values、输入保护与阈值必须在 Stage 3 结合 CM35 当期电气资料重新 qualification。
 - Protocol / Application contract：`DataOut = 1` 表示当前状态 Active，`DataOut = 0` 表示 Inactive。
 - firmware 必须执行 Active-Low → positive protocol semantic inversion。
+- CM35 `V/G` 是 I/O 隔离 24 V 电源正/负端，`24V/0V` 是 controller system supply；官方资料建议二者使用隔离、不共地的 24 V source。Stage 3 必须明确本板与 CM35 I/O reference/domain 的具体连接关系。
 
 ### CM35 Handshake Protocol — Version B
 
@@ -80,6 +81,7 @@
 | IN18 | Reserved / Spare；保留硬件通道 |
 
 - IN11 只表示 Start Request；IN12 只选择 Formal / Reference Scan；IN16 只选择速度。
+- 用户已明确确认实际使用的 CM35 存在 IN15–IN18；局部手册页面只显示较少通道时不得据此删除这些通道。
 - Formal scan 不使用 IN13 / IN14；启动前必须先设置 length 与 speed。
 - Reference scan 启动前必须先设置 length、speed 与 reference-count encoding。
 
@@ -122,7 +124,7 @@
 
 | ID | Requirement | Verification Method | Expected Result |
 | --- | --- | --- | --- |
-| REQ-001 | Repository 使用固定 Framework v1.1.1 snapshot 并保持 Standalone Project 结构 | Project Validator + 人工核对 | binding、Required files、导航与状态一致，无 Template residue |
+| REQ-001 | Repository 使用 `FRAMEWORK.md` 中当前有效 Release + immutable Commit binding 并保持 Standalone Project 结构，同时保留 initialization provenance | Project Validator + 人工核对 | binding、Required files、导航与状态一致，无 Template residue；Initialization Framework Release 仍可追溯 |
 | REQ-002 | 具有 8 路 STM32 → CM35 IN11–IN18 硬件通道 | 后续原理图审查与硬件测试 | 8 路均存在，含 IN17/IN18 reserved channels |
 | REQ-003 | 具有 8 路 CM35 OUT1–OUT8 → STM32 硬件通道 | 后续原理图审查与硬件测试 | 8 路均存在，含 OUT5–OUT8 reserved channels |
 | REQ-004 | 保持 Version B handshake mapping 与时序前置规则 | Firmware/interface review + integration test | IN/OUT mapping、scan prerequisites 与协议语义一致 |
@@ -142,12 +144,12 @@
 | ID | Question | Impact | Decision Needed By | Owner / Source | Qualification / Confirmation Plan | State |
 | --- | --- | --- | --- | --- | --- | --- |
 | OPEN-001 | USB-UART 是否进行 galvanic isolation？ | 决定 ground loop、噪声、故障传播、电源域和 BOM | Resolved in Stage 1 | 用户确认 | 采用 board-mounted USB-UART + galvanically isolated UART interface；Stage 2 Primary 为 CH340C + ISO7721DR，Stage 3 继续核对 power-state/back-power behavior | Closed |
-| OPEN-002 | 每个传感器读取 NO only 还是 NO + NC？ | 决定 MCU 输入数量、前端通道数、端口资源与诊断能力 | Resolved in Stage 1 | 用户确认 | 每个传感器 NO + NC 均采集，4 × 2 = 8 路 MCU sensor digital inputs；具体 frontend 留待 Stage 2/3 | Closed |
-| OPEN-003 | USB connector 具体类型？ | 影响机械可靠性、装配、外壳和线缆 | Before Stage 2 selection | 用户 / Mechanical | Stage 2 conditional candidate 为 TYPE-C-31-M-12；待 enclosure / 板边机械约束确认后才能关闭 | Open |
-| OPEN-004 | CM35 / Sensor / Power terminal 最终 pitch 和系列？ | 影响板尺寸、现场接线、装配方式与成本 | Select in Stage 2; freeze before Stage 5 | 用户 / Mechanical / JLCPCB capability | 比较约 5.0/5.08 mm 候选、pluggable 需求与 PCBA 可行性 | Open |
-| OPEN-005 | 24 V input protection architecture？ | 影响反接、surge/transient 能力、压降、热与安全 | Resolved in Stage 2 | 用户 measurement + Stage 2 qualification | 采用 input overcurrent element + STPS2H100A series reverse-polarity protection + SMBJ30A-TR TVS + protected 24V bus；exact fuse/PTC rating、surge waveform/source impedance 与 thermal margin 留待 Stage 3 计算 | Closed |
-| OPEN-006 | 24 V → 3.3 V power architecture？ | 影响效率、热、噪声、布局、成本与可采购性 | Resolved in Stage 2 | Stage 2 qualification | Primary 采用 LMR36510FADDAR 65 V / 1 A class synchronous buck；exact inductor/FB/capacitors/load budget/thermal 留待 Stage 3 | Closed |
+| OPEN-002 | 每个传感器读取 NO only 还是 NO + NC？ | 决定 MCU 输入数量、前端通道数、端口资源与诊断能力 | Resolved in Stage 1 | 用户确认 | 每个传感器 NO + NC 均采集，4 × 2 = 8 路 MCU sensor digital inputs；exact frontend 留待 Stage 3 | Closed |
+| OPEN-003 | USB connector 具体机械型号是否接受？ | 影响机械可靠性、装配、外壳和线缆；不改变已选 USB2.0 architecture | Before Stage 5 Layout Preflight | 用户 / Mechanical | Stage 2 conditional candidate 为 TYPE-C-31-M-12；按 enclosure / 板边 / 插拔约束完成 mechanical acceptance | Open |
+| OPEN-004 | CM35 / Sensor / Power terminal 最终 pitch 和系列？ | 影响板尺寸、现场接线、装配方式与成本；不阻断当前 interface class | Before Stage 5 Layout Preflight | 用户 / Mechanical / JLCPCB capability | 比较约 5.0/5.08 mm 候选、pluggable 需求与 PCBA 可行性 | Open |
+| OPEN-005 | 24 V input protection architecture？ | 影响反接、surge/transient 能力、压降、热与安全 | Resolved in Stage 2 | 用户 measurement + Stage 2 qualification | 采用 0468.500NRHF 0.5 A Slo-Blo fuse + STPS2H100A + SMBJ30A-TR + protected 24V bus；exact startup/time-current、surge waveform/source impedance 与 thermal margin 留待 Stage 3 | Closed |
+| OPEN-006 | 24 V → 3.3 V power architecture？ | 影响效率、热、噪声、布局、成本与可采购性 | Resolved in Stage 2 | Stage 2 qualification | Primary 采用 LMR36510FADDAR 65 V / 1 A class synchronous buck；Stage-2 0.25 A output envelope PASS，exact inductor/FB/capacitors/ripple/thermal 留待 Stage 3 | Closed |
 | OPEN-007 | exact GPIO / USART pin allocation？ | 影响通道数量、boot/debug、安全状态与 PCB routing | Stage 3 | Stage 3 design | 按已确认的 8 路 sensor inputs 与隔离 UART 架构进行资源分配、启动状态和冲突检查 | Open |
-| OPEN-008 | exact isolation / sensor-interface components？ | 影响输入阈值、保护、速度、功耗、隔离与通道密度 | Select in Stage 2; qualify in Stage 3 | Stage 2/3 qualification | Stage 2 Primary 已确定 ISO7721DR 与 Nexperia 2N7002,215；CM35/Sensor exact resistor、filter、ESD/transient/current-limiting network 仍需官方外设电气资料与 Stage 3 qualification | Open |
-| OPEN-009 | enclosure / PCB size / mounting constraints？ | 影响 connector 布局、板框、安装孔、散热和可维护性 | Collect before Stage 2; freeze before Stage 5 | 用户 / Mechanical | 收集可用空间、安装方式、禁布区、固定点及接线方向并确认 | Open |
-| OPEN-010 | 是否需要 indicator LEDs / additional diagnostic interface？ | 影响 GPIO、电源预算、面板可见性和调试效率 | Before Stage 2 selection | 用户 / Serviceability | 定义必须显示的 power/communication/I/O/fault 状态和可见性需求 | Open |
+| OPEN-008 | exact CM35 / Sensor external-interface values and protection network？ | 影响阈值、保护、功耗与抗扰度；Stage-2 topology 已确定 | Stage 3 | Stage 3 parameter design + external-device evidence | 保持 2N7002 Primary；结合 exact threshold/current、resistor、RC、ESD/transient/current-limiting requirements 完成 qualification | Open |
+| OPEN-009 | enclosure / PCB size / mounting constraints？ | 影响 connector 布局、板框、安装孔、散热和可维护性 | Before Stage 5 Layout Preflight | 用户 / Mechanical | 收集可用空间、安装方式、禁布区、固定点及接线方向并确认 | Open |
+| OPEN-010 | 是否需要 indicator LEDs / additional diagnostic interface？ | 影响 GPIO、电源预算、面板可见性和调试效率；属于 ordinary peripheral scope | Stage 3 module planning | 用户 / Serviceability | 定义必须显示的 power/communication/I/O/fault 状态和可见性需求；未决定不阻断 Stage 2 | Open |

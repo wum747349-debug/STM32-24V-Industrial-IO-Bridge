@@ -11,6 +11,7 @@
 | Previous-generation BOM spreadsheet | 用户提供的上一代 BOM | Legacy Design Reference；旧器件仍需重新 qualification | Archived; full BOM comparison not performed | [references/旧BOM表.xlsx](references/旧BOM表.xlsx) |
 | AN-LS18-40-N photoelectric sensor manual | 用户提供的使用说明书 | External Device Reference | Archived; technical content reviewed for Stage 2, manufacturer provenance still open | [references/激光漫反射光电开关使用说明书.pdf](references/激光漫反射光电开关使用说明书.pdf) |
 | Existing 24 V PSU photo + user measurement | 用户在 2026-08-29 会话提供的产品图片和万用表测量 | Current power-source operating-point evidence | Product image shows `MS-120-24`, nominal 24 V / 5 A / 120 W；user measured output ≈24 V and observed stable | Conversation record; no repository file |
+| CM35 official I/O pages | 用户在本轮提供/确认的官方资料页面 | User-provided Official-Manual Evidence | Reviewed for Stage-2 topology：pull-to-24G active、input filtering ≥ about 2 ms、OUT sinking connection、V/G isolated I/O power domain；exact electrical parameters absent | Conversation/session evidence；raw local PDF is untracked and is not claimed as archived by this commit |
 
 Legacy schematic 与 BOM 不自动成为本项目 EDA authority。用户已明确授权复用上一代 MOSFET level-conversion idea；Stage 2 仍以当前器件 official data 重新 qualification，Stage 3 新 `.SchDoc` 才是 implementation authority。
 
@@ -19,15 +20,19 @@ Legacy schematic 与 BOM 不自动成为本项目 EDA authority。用户已明�
 | Item / Module | Official source | Key facts used in Stage 2 | Review Status |
 | --- | --- | --- | --- |
 | STM32F103C8T6 | STMicroelectronics STM32F103C8 product / datasheet / reference manual | 2.0–3.6 V device family、72 MHz、LQFP-48 option、GPIO/USART/SWD resource class | Stage 2 core selection reviewed; Stage 3 minimum-system details pending |
-| LMR36510FADDAR | Texas Instruments LMR36510 datasheet Rev. B / product page | 4.2–65 V input、1 A synchronous buck、400 kHz FPWM orderable option、high-voltage transient protection features | Reviewed for Primary selection; external-component calculation pending |
+| LMR36510FADDAR | [Texas Instruments LMR36510 product / datasheet](https://www.ti.com/product/LMR36510) | 4.2–65 V input、1 A synchronous buck、400 kHz FPWM orderable option、high-voltage transient protection features | Reviewed for Primary selection; 0.25 A output envelope PASS；external-component calculation pending |
+| LMR36520FADDAR | [Texas Instruments LMR36520 product / datasheet](https://www.ti.com/product/LMR36520) | 4.2–65 V、2 A、400 kHz FPWM、DDA-8；TI states pin compatibility with LMR36510 | Qualified electrical scaling Alternate；purchase-time sourcing recheck required |
 | STPS2H100A | STMicroelectronics STPS2H100 product / datasheet | 100 V / 2 A Schottky rectifier、SMA package | Reviewed for series reverse-polarity Primary |
 | SMBJ30A-TR | STMicroelectronics SMBJxxA/CA datasheet | 30 V stand-off；600 W class 10/1000 µs TVS；clamp behavior depends on surge waveform/current | Reviewed for Primary selection; system surge margin calculation pending |
-| 2N7002,215 | Nexperia 2N7002 product / datasheet | 60 V / 300 mA N-MOSFET、logic-level drive、logic-level translator application | Reviewed for legacy-conversion Primary |
-| ISO7721DR | Texas Instruments ISO7721 product / datasheet | dual-channel digital isolator、1 forward + 1 reverse、2.25–5.5 V supplies、default output HIGH option | Reviewed for UART-isolation Primary |
+| 2N7002,215 | [Nexperia 2N7002 product / datasheet](https://www.nexperia.com/product/2N7002) | 60 V / 300 mA N-MOSFET、logic-level drive、logic-level translator application | Reviewed for legacy-conversion Primary；no exact qualified Alternate currently selected |
+| ISO7721DR | [Texas Instruments ISO7721 product / datasheet](https://www.ti.com/product/ISO7721) | dual-channel digital isolator、1 forward + 1 reverse、2.25–5.5 V supplies、default output HIGH option | Reviewed for UART-isolation Primary |
+| ISO6721BDR | [Texas Instruments ISO6721 product / datasheet](https://www.ti.com/product/ISO6721) | dual-channel 1 forward + 1 reverse、default HIGH、2.25–5.5 V plus 1.8 V support、SOIC-8；basic-isolation class | Qualified cost-focused Alternate only while Project has no reinforced-isolation requirement；Stage 3 must preserve power-state behavior |
 | CH340C | WCH CH340 datasheet / official download page | USB-to-UART、3.3/5 V supply、internal clock variant、SOP-16 | Reviewed for Stage 2 Primary; exact pin/power-state implementation pending |
 | USBLC6-2SC6 | STMicroelectronics USBLC6-2 product / datasheet | 2-line USB 2.0 high-speed ESD protection、low line capacitance | Reviewed for USB ESD Primary |
 | AN-LS18-40-N | User-provided manual; manufacturer provenance not yet confirmed | DC 10–30 V、NPN NO+NC、≤10 mA static current、NO/NC wiring、200 mA max output-load statement | Technical content available; manufacturer authority not confirmed |
-| CM35 controller | Official I/O manual / electrical specification | Required for exact IN/OUT threshold/current/protection qualification | Not collected |
+| CM35 controller | User-provided official-manual pages | Input pull-to-24G active；anti-interference filtering with ≥about 2 ms signal duration；OUT load between +24 V and output confirms sinking behavior；V/G is isolated I/O supply and is recommended isolated from controller 24V/0V | Stage-2 topology reviewed；exact threshold/current/VOL/leakage remain Stage-3 inputs |
+| F1 one-time fuse | [Littelfuse 468 Series datasheet](https://www.littelfuse.com/assetdocs/fuse-468-datasheet?assetguid=6b7857dc-f79c-4aae-8bcc-a9ef11ddef09) | 0468.500NRHF：0.5 A、63 V、1206 Slo-Blo、50 A interrupt at 63 VAC/VDC；25% continuous derating plus temperature re-rating | Reviewed for Primary；final startup/local-temperature check remains Stage 3 |
+| F1 resettable Alternate | [Littelfuse 1210L Series PPTC datasheet](https://www.littelfuse.com/assetdocs/resettable-ptcs-1210l-datasheet?assetguid=b3a2be92-83a1-491d-9c6d-dc64451de047) | 1210L035/60PR：0.35 A hold / 0.70 A trip at 20°C、60 V、10 A；hold falls to 0.21 A at 70°C、R1max 1.5 Ω | Alternate architecture only；temperature/heating/residual-current limitations prevent Primary selection |
 
 ## Procurement Sources — LCSC / JLCPCB
 
@@ -44,6 +49,8 @@ Point-in-time supplier observations must be rechecked before purchasing / PCBA s
 | 24 V → 3.3 V | TI LMR36510FADDAR | C1858394 | Good / in stock during check | Supplier data does not replace TI design procedure |
 | Reverse-polarity diode | ST STPS2H100A | C81548 | Listing confirmed | Final dissipation depends on board current budget |
 | 24 V TVS | ST SMBJ30A-TR | C133663 | Good / in stock during check | Surge compliance cannot be inferred from supplier listing |
+| Input fuse | Littelfuse 0468.500NRHF | C206993 | Listing re-confirmed during 2026-08-30 closeout | Supplier listing confirms MPN/package only；technical qualification uses Littelfuse datasheet |
+| PPTC Alternate | Littelfuse 1210L035/60PR | C28661880 | Listing found during 2026-08-30 closeout；availability not frozen | Temperature-dependent hold behavior limits application |
 
 ## Evidence Interpretation Notes
 
@@ -51,14 +58,15 @@ Point-in-time supplier observations must be rechecked before purchasing / PCBA s
 - The product image for `MS-120-24` is not treated as a manufacturer official datasheet; its 24 V / 5 A / 120 W marking is used only as user-provided equipment identification evidence.
 - The external PSU 5 A capability must not be used as the PCB input fuse/current-limit value. Board protection is sized from the board load budget and fault-energy boundary.
 - The earlier requirements wording that described legacy CM35 readback as optocoupler-based conflicted with the archived schematic. Stage 2 inspection supports a 2N7002 MOSFET conversion baseline, and `requirements.md` has been corrected accordingly.
+- The user-provided CM35 official-manual evidence is sufficient for Stage-2 topology qualification but not for exact electrical parameter claims. A local CM35 PDF present during this work remains untracked and is not represented as repository-archived evidence.
 
 ## Missing Evidence / Remaining Qualification
 
 | Topic | Required Source | Decision Blocked | Priority | Evidence State |
 | --- | --- | --- | --- | --- |
 | STM32 minimum-system details | ST datasheet/reference manual/application notes | Stage 3 clock/reset/boot/SWD/VDDA implementation | High; needed by Stage 3 | Core MCU selection done; implementation review open |
-| CM35 I/O electrical specification | CM35 official manual/datasheet | Exact input/output current, threshold, resistor and protection network qualification | High; needed by Stage 3 and formal review | Open |
+| CM35 exact I/O electrical parameters | CM35 official manual/datasheet pages containing threshold/current/VOL/leakage | Exact resistor、RC、ESD/transient/current-limiting and domain implementation | High; needed by Stage 3 and formal review | Topology closed；exact parameters open |
 | AN-LS18-40-N manufacturer provenance | Manufacturer official datasheet or confirmed provenance of archived manual | Final sensor input protection/current/filter design | High; needed by Stage 3 | Manual content reviewed; authority open |
 | External PSU official tolerance/surge data | Manufacturer official datasheet if obtainable | Required only for tighter PSU-specific or compliance-level surge claims | Medium | User nominal image + ≈24 V measurement available; official spec absent |
 | Mechanical envelope | Enclosure, board size, mounting and wiring constraints | Final USB/terminal mechanical selection and PCB outline | High; freeze before Stage 5 | Open |
-| Final board load budget | Stage 3 circuit design and component currents | Exact input fuse/PTC rating、diode dissipation、buck thermal margin | High; needed before schematic closeout | Open |
+| Detailed board power design | Stage 3 circuit design and final component currents | Exact startup waveform、fuse time-current check、diode loss、buck ripple/magnetics/thermal | High; needed before schematic closeout | Stage-2 bounding budget and current classes closed；detailed design open |

@@ -4,12 +4,13 @@
 
 ## Stage 2 Current State
 
-- Selection activity：In progress
+- Selection activity：Closeout complete
 - Critical component candidates：Recorded
 - Primary decisions：Recorded for current first-pass scope
-- Deferred peripherals：Open
+- Deferred peripherals：Routed to Stage 3 / Stage 5 owners；not Stage-2 blockers
 - EDA implementation：Not started
-- Stage 2 complete：NO
+- Stage 2 complete：YES
+- Closeout decision：PASS
 
 ## Confirmed Inputs
 
@@ -20,6 +21,8 @@
 - 制造目标：JLCPCB / LCSC 与 SMT / PCBA preferred。
 - 24 V source：用户提供的电源图片显示 `MS-120-24`、24 V / 5 A / 120 W；用户已用万用表确认当前实际输出约 24 V 且观察较稳定。该测量只证明当前 operating point，不证明电源 tolerance、surge 或 protection performance。
 - Legacy conversion：用户明确授权复用上一代 I/O 转换思路；已检查归档旧原理图，主要转换器件为 2N7002 MOSFET，而不是 optocoupler。新设计仍需在 Stage 3 对 exact connection、resistor values、safe state 与 external-interface protection 重新核对。
+- CM35 official I/O evidence：用户提供的官方资料页面确认 input pull-to-24G active、输入过滤要求信号保持至少约 2 ms、OUT1–OUT8 采用 low-side/sinking external connection、`V/G` 为 I/O 隔离 24 V power domain；不据此声称 exact threshold/current 或内部 transistor topology。
+- Channel scope：用户已明确确认实际使用设备存在 IN15–IN18，Project 继续保留 IN11–IN18 + OUT1–OUT8。
 
 ## Primary Candidate Table
 
@@ -36,6 +39,29 @@ Availability 为 2026-08-29 的 point-in-time procurement evidence；未取得�
 | M1 | 24 V → 3.3 V buck | C1858394 | Texas Instruments | LMR36510FADDAR | HSOIC/ESOP-8 | Good | 4.2–65 V input、1 A synchronous buck、400 kHz FPWM、70 V transient tolerance class、industrial-oriented protection features | Yes | Primary | Inductor、FB、input/output capacitors、thermal/load budget deferred to Stage 3 |
 | M1 | Reverse-polarity protection | C81548 | STMicroelectronics | STPS2H100A | SMA (DO-214AC) | Unknown | 100 V / 2 A Schottky series diode；simple fail-safe reverse-polarity blocking for low-current 24 V control board | Yes | Primary | Forward drop / dissipation to be checked against final current budget |
 | M1 | 24 V transient suppression | C133663 | STMicroelectronics | SMBJ30A-TR | SMB (DO-214AA) | Good | 30 V stand-off；600 W class 10/1000 µs TVS；selected above measured ~24 V steady source and below LMR36510 high-voltage boundary | Yes | Primary | ST table gives higher clamp under 8/20 µs high-current condition; Stage 3 must check source impedance, surge assumption and margin before claiming a compliance level |
+| M1 | Input overcurrent protection | C206993 | Littelfuse | 0468.500NRHF | 1206 | Unknown | 0.5 A / 63 V Slo-Blo；50 A interrupt at 63 VAC/VDC；manufacturer continuous and temperature derating applied to 0.225 A design envelope | Yes | Primary | Final Cin/startup pulse and local-temperature check remain Stage 3 |
+
+## Stage-2 Bounding Power Budget
+
+This budget selects current classes only. It is not a detailed startup、ripple、magnetics、thermal or compliance calculation.
+
+| Load | Bounding allowance | Evidence / limitation |
+| --- | ---: | --- |
+| 4 × AN-LS18-40-N static sensor supply | ≤40 mA @ 24 V | User manual states ≤10 mA each；manufacturer provenance provisional |
+| CM35 16-channel interface circuitry | 80 mA @ 24 V | Conservative 5 mA/channel allocation；exact CM35 current/impedance is not known |
+| STM32F103C8T6 | 60 mA @ 3.3 V | Conservative selection allowance |
+| ISO7721 machine-side supply | 10 mA @ 3.3 V | Logic-rate allowance |
+| Machine-side pull-ups / interface logic | 40 mA @ 3.3 V | Bounding allowance pending exact values |
+| Indicator / support allowance | 40 mA @ 3.3 V | Ordinary peripheral allowance |
+| 3.3 V engineering reserve | 100 mA @ 3.3 V | Total 3.3 V design envelope = 250 mA |
+
+Using 75% buck efficiency for a deliberately conservative Stage-2 conversion, the 250 mA / 3.3 V output envelope draws about 46 mA at 24 V. Sensors + CM35 allocation + buck input total about 166 mA; rounding to a **225 mA continuous 24 V design envelope** adds about 59 mA board-level reserve.
+
+Conclusions:
+
+- LMR36510FADDAR：0.25 A envelope vs 1 A class → **PASS**, about 4× current-class headroom.
+- STPS2H100A：0.225 A envelope vs 2 A class → **PASS**, about 8.9× current-class headroom before exact forward-loss/thermal calculation.
+- Input protection：0.5 A time-delay fuse class is appropriate; external PSU 5 A is not used as F1 rating.
 
 ## Primary Decisions
 
@@ -45,7 +71,7 @@ Current architecture decision:
 
 ```text
 24V input
-  -> input overcurrent element (exact fuse/PTC rating deferred)
+  -> 0468.500NRHF 0.5 A / 63 V Slo-Blo fuse
   -> STPS2H100A series reverse-polarity protection
   -> protected 24V bus
        -> SMBJ30A-TR to 0V for transient suppression
@@ -54,6 +80,13 @@ Current architecture decision:
 ```
 
 The external 24 V source has been measured by the user at approximately 24 V and observed stable. This supports the 30 V TVS stand-off choice for the current design assumption, but it is not a substitute for an official PSU tolerance/surge specification.
+
+F1 rationale:
+
+- Littelfuse specifies the 0.5 A 468 device for 50 A interrupting at 63 VAC/VDC and gives time-delay opening behavior suitable for inrush tolerance.
+- Littelfuse requires 25% standard continuous derating plus temperature re-rating. Its 70°C example yields `0.75 × 0.80 × 0.5 A = 0.30 A`, about 33% above the 0.225 A Stage-2 envelope.
+- Stage 3 must compare final DC/DC input capacitance and sensor startup with the time-current curve and verify local ambient. If usable continuous rating falls to or below 0.225 A, or nuisance opening is predicted, reassess the 468 Series 1 A member and verify its exact orderable MPN rather than silently increasing F1.
+- The 50 A interrupting rating does not by itself prove coordination with the PSU peak fault current or field wiring；those source/fault-path inputs remain unverified, and no system safety-standard claim is made.
 
 ### M3 — USB-UART / Isolation
 
@@ -75,23 +108,58 @@ The archived previous-generation schematic was reviewed in Stage 2 and shows rep
 
 The new board will use Nexperia `2N7002,215` as the Primary device for the reused MOSFET conversion approach. This is a topology reuse decision, not a declaration that every old resistor value or protection detail is automatically valid for the new board.
 
-## Alternate / Scalability Notes
+CM35 topology qualification is **PASS** for Stage 2:
 
-- `LMR36520` family is a pin-compatible 65 V / 2 A scaling option if the final 3.3 V load budget materially exceeds the 1 A class; it is not currently required.
-- `ISO6721` family may be evaluated as a cost-focused UART-isolator alternate if procurement or cost requires it; no alternate is promoted to equal Primary status without current datasheet/procurement qualification.
-- 2N7002 has multiple supplier/order variants; exact alternates must preserve at least the required VDS margin, 3.3 V gate-drive behavior, package/pin mapping and current capability.
-- Purchase-time availability must be rechecked before ordering / PCBA submission; current stock observations are not permanent Project facts.
+- Input：pull/sink signal to `24G` is active；official material describes anti-interference filtering and requires at least about 2 ms signal duration.
+- Output：official external wiring places the load between `+24 V` and OUT, supporting low-side / sinking behavior. No more specific internal transistor topology is claimed.
+- Power domains：`V/G` is the isolated I/O 24 V supply and `24V/0V` is controller system power；the official recommendation is isolated, non-common-ground sources. Exact Project connection is a Stage-3 design input.
+- Exact ON/OFF threshold、input current/impedance、maximum sink current、ON-state voltage、leakage and resistor/RC/protection values remain unknown. They do not block the Stage-2 topology decision.
 
-## Open Issues / Deferred Peripherals
+Sensor qualification is **CONDITIONAL** for Stage 2: the user-provided manual supports 10–30 V、NPN、NO+NC、wiring and ≤10 mA static current, so the 2N7002 direction and current class can close. Manufacturer provenance and exact frontend values remain a Stage-3 evidence gate.
 
-- [Datasheet] CM35 official I/O electrical specification remains missing. It blocks final per-channel threshold/current/protection qualification, not the current selection of 2N7002 as the reuse Primary.
-- [Datasheet] AN-LS18-40-N archived manual gives 10–30 V, NPN NO+NC and wiring information, but manufacturer provenance remains unconfirmed; final input protection/filter values remain Stage 3 work.
-- [Risk] SMBJ30A-TR + LMR36510 margin must be checked against the actual assumed surge waveform/source impedance before any IEC/system-level surge claim. No such compliance claim is made now.
-- [Risk] Exact input overcurrent element and rating remain deferred until the final load/current budget is calculated; the 24 V / 5 A external PSU capability must not be used as the PCB fuse rating.
-- [Deferred] LMR36510 inductor、feedback divider、input/output capacitors、bulk capacitor voltage rating and thermal/layout details.
-- [Deferred] MCU crystal / load capacitors、normal decoupling、ordinary pull-up/down、LEDs、test points and other non-architecture peripherals.
-- [Mechanical] USB-C connector and 5.0/5.08 mm terminal exact mechanical acceptance remain open until enclosure/board constraints are known.
-- [Procurement] Primary and alternate availability must be rechecked immediately before purchasing / PCBA BOM submission.
+## Primary / Alternate Decisions
+
+| Architecture-sensitive function | Primary | Alternate | Qualification / reassessment rule |
+| --- | --- | --- | --- |
+| 24 V → 3.3 V | LMR36510FADDAR, 65 V / 1 A | LMR36520FADDAR, 65 V / 2 A | Qualified electrical scaling Alternate；TI identifies DDA-8 pin compatibility. Use only if Stage-3 load/thermal results require it and recheck sourcing. |
+| UART isolator | ISO7721DR | ISO6721BDR | Qualified cost-focused Alternate for 1-forward/1-reverse UART and default-HIGH behavior. ISO6721BDR is basic-isolation class；do not substitute if later requirements demand the ISO7721 reinforced-isolation capability. |
+| Input overcurrent | 0468.500NRHF one-time 0.5 A / 63 V Slo-Blo fuse | 1210L035/60PR 60 V PPTC architecture | Alternate is temperature-conditional：0.35 A hold at 20°C falls to 0.21 A at 70°C；resistance/heating、residual current and sustained-fault behavior prevent Primary status. |
+| 24 V / 3.3 V interface MOSFET | Nexperia 2N7002,215 | No qualified Alternate currently selected | Any purchase-time alternate must be manufacturer-qualified for ≥60 V VDS class、3.3 V low-current gate-drive use、required current、SOT-23 pin mapping/footprint and temperature. If Primary is unavailable, stop BOM substitution until one exact MPN passes this envelope. |
+
+Purchase-time availability must be rechecked before ordering / PCBA submission；current stock observations are not permanent Project facts.
+
+## Blocking / Deferred Boundary
+
+Stage-2 closeout blockers：**None**.
+
+Deferred to Stage 3:
+
+- exact GPIO / USART allocation；MCU crystal/load capacitors、boot/reset values and ordinary decoupling；
+- LMR36510 inductor、feedback divider、Cin/Cout、startup waveform、ripple、thermal and detailed loss calculations；
+- exact CM35 / Sensor resistor、RC、ESD/transient/current-limiting networks and CM35 V/G reference/domain connection；
+- F1 final local-temperature/time-current verification and STPS2H100A exact forward-loss；
+- LEDs、test points and ordinary peripherals。
+
+Deferred to Stage 5 Layout Preflight:
+
+- USB-C final mechanical acceptance；terminal exact series/MPN；
+- PCB outline、mounting holes、enclosure and final wiring access。
+
+Deferred to procurement:
+
+- Primary/Alternate stock and price recheck immediately before purchasing / PCBA BOM submission。
+
+Any new evidence that changes the 24 V architecture、fault-energy boundary、isolation requirement、interface voltage/current class or critical component qualification reopens Stage 2. Exact parameters listed above do not do so by themselves.
+
+## Stage 2 Exit Review
+
+- Critical architecture / safety / selection decisions：Closed for Stage 2.
+- Bounding power budget：PASS.
+- F1 Primary + Alternate architecture：Qualified with explicit Stage-3 verification rules.
+- CM35 Stage-2 qualification：PASS.
+- Sensor Stage-2 qualification：CONDITIONAL；not a closeout blocker.
+- Primary / Alternate completeness：PASS with explicit no-qualified-Alternate rule for 2N7002.
+- Stage 2 Closeout：**PASS**.
 
 ## Evidence Boundary
 
