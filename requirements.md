@@ -8,7 +8,7 @@
 
 ## Out of Scope
 
-- 本阶段不选择 USB-UART、隔离、DC/DC、TVS、反接保护、保险/PTC、Sensor Input Frontend 或端子具体 MPN。
+- 本阶段不选择具体 USB-UART、digital isolator、DC/DC、TVS、反接保护、保险/PTC、Sensor Input Frontend 或端子 MPN。
 - 不进行 Stage 2 Component Selection、Stage 3 Schematic Design 或任何后续 Stage 工作。
 - 不创建或修改 `.SchDoc`、`.PcbDoc`，不执行 EDA drawing、PCB design、firmware implementation 或 manufacturing output。
 - 不声称 ERC、DRC、Repour、PCBA、Bring-up 或实测已完成。
@@ -17,9 +17,10 @@
 ## Functional Boundary
 
 - 系统链路：C# 上位机 ↔ USB ↔ 板载 USB-UART ↔ STM32 ↔ CM35。
+- CM35 实际提供 IN1–IN18 与 OUT1–OUT8；本 Project 只控制 IN11–IN18，并回读 OUT1–OUT8。IN1–IN10 不属于本板控制范围。
 - CM35 控制：保留 8 路 STM32 → CM35 IN11–IN18 控制通道。
 - CM35 回读：保留 8 路 CM35 OUT1–OUT8 → STM32 状态通道，包括当前保留通道。
-- 传感器：连接 4 个相同 AN-LS18-40-N，每个传感器具有独立 `+24V / 0V / NO / NC` 现场端子；实际读取 NO only 或 NO + NC 待确认。
+- 传感器：连接 4 个相同 AN-LS18-40-N，每个传感器具有独立 `+24V / 0V / NO / NC` 现场端子；NO 与 NC 均采集，共 8 路 MCU sensor digital inputs。
 - 板载功能：STM32F103C8T6 最小系统、板载 USB-UART、24 V 输入与保护、低压供电、SWD / 调试与必要测试入口。
 - 固件负责把 Active-Low 物理 GPIO 语义转换为正逻辑协议语义；本项目本阶段只记录接口契约，不实现固件。
 
@@ -29,9 +30,9 @@
 | --- | --- |
 | M1 — 24V Input / Protection / Low-voltage Power | 接收机器 24 V，形成受保护 24 V bus，并向机器侧低压逻辑供电；具体架构待后续阶段确定。 |
 | M2 — STM32F103C8T6 Minimum System | 集成 MCU 本体及后续所需的供电、VDDA、reset、boot、clock、SWD、调试与安全启动边界。 |
-| M3 — USB-UART Communication | 实现 PC USB 到 STM32 UART；galvanic isolation 架构待确认。 |
+| M3 — USB-UART Communication | 实现 PC USB 到 STM32 UART，并在 USB-UART 与 machine-side STM32 UART 之间设置 galvanic isolation；具体器件待后续阶段确定。 |
 | M4 — CM35 Industrial I/O Interface | 8 路 STM32 → IN11–IN18 控制与 8 路 OUT1–OUT8 → STM32 回读。 |
-| M5 — Photoelectric Sensor Interface | 为 4 个 AN-LS18-40-N 供电并接收其现场输出；具体输入前端待后续阶段确定。 |
+| M5 — Photoelectric Sensor Interface | 为 4 个 AN-LS18-40-N 供电，并接收每个传感器的 NO + NC，共 8 路输入；具体输入前端待后续阶段确定。 |
 | M6 — Connectors / SWD / Indicators / Test Points | 提供便于现场接线、编程、调试和安全首次上电的物理入口；指示功能范围待确认。 |
 
 ## Power Requirements
@@ -49,8 +50,8 @@
 ### PC / USB / UART
 
 - 采用 board-mounted USB-UART，尽量复用现有串口帧与 C# 上位机 communication model。
-- USB connector 类型、USB-UART IC、USART/GPIO 分配均待后续阶段确定。
-- PC side 与 24 V machine ground 是否 galvanically isolated 为架构待决项；isolated 与 non-isolated 均未冻结。
+- USB-UART 与 STM32 UART 之间必须采用 galvanically isolated UART interface；PC USB ground 与 machine-side 24 V `0V` 不直接共地。
+- USB connector 类型、USB-UART IC、digital isolator、USART/GPIO 分配及具体隔离实现均待后续阶段确定。
 
 ### STM32 → CM35（IN11–IN18）
 
@@ -96,13 +97,13 @@
 - 每个传感器使用独立 `+24V / 0V / NO / NC` 端子。
 - 现场长线输入必须考虑 ESD / transient / noise、input current limiting / protection，并可考虑 RC / hardware filtering；无需高速数字输入。
 - 具体采用 transistor、Schmitt buffer、comparator 或 optocoupler 留待 Stage 2/3。
-- 每个传感器读取 NO only（4 MCU inputs）还是 NO + NC（8 MCU inputs）保持 Open。
+- 每个传感器的 NO + NC 均采集：4 个传感器共 8 路 MCU sensor digital inputs。
 
 ## Safety Boundary
 
 - MCU reset、boot、firmware not ready 及任何上电瞬态期间，全部 CM35 control 必须保持 OFF / inactive，不得触发 CM35 输入误动作。
 - 外部 24 V、CM35 与 Sensor 长线接口必须考虑反接、ESD、surge/transient、噪声和故障传播。
-- USB 与机器地之间可能存在 ground noise、ground loop 与 fault propagation；隔离决策必须在冻结通信架构前完成。
+- USB-UART 与 STM32 UART 之间的 galvanic isolation 是已确认架构要求，用于隔离 PC USB ground 与 machine-side 24 V `0V`；具体器件、额定值与实现仍需后续 qualification。
 - USB 侧不得意外 back-power 机器侧；不同电源域之间的掉电、插拔与 fault state 必须在后续设计中验证。
 - 首次上电使用可限流电源并分阶段验证；具体安全 procedure 后续建立，当前未执行实物上电。
 - 本 Stage 1 不声称满足任何未定义的法规、functional safety 或 isolation rating；如项目需要，须由用户另行确认适用标准。
@@ -126,9 +127,9 @@
 | REQ-004 | 保持 Version B handshake mapping 与时序前置规则 | Firmware/interface review + integration test | IN/OUT mapping、scan prerequisites 与协议语义一致 |
 | REQ-005 | 保持协议正逻辑与物理 Active-Low 的跨层契约 | Schematic / firmware / PC software interface review | DataIn/DataOut 的 `1=Active`，GPIO Active-Low inversion 明确且一致 |
 | REQ-006 | reset、boot、firmware not ready 时 CM35 controls 为 inactive | 后续原理图分析、上电与 fault-injection test | 不发生 CM35 输入误动作 |
-| REQ-007 | 4 个传感器各有独立 `+24V/0V/NO/NC` 现场端子 | 原理图/PCB审查与接线检查 | 四组接口完整、标识清晰、便于现场接线 |
+| REQ-007 | 4 个传感器各有独立 `+24V/0V/NO/NC` 现场端子，并采集全部 NO + NC | 原理图/PCB审查与接线检查 | 四组接口完整、标识清晰，共 8 路 MCU sensor digital inputs |
 | REQ-008 | 传感器长线输入具备与工业环境相适应的保护/限流/抗噪声设计 | 后续设计审查与测试 | 设计依据可追溯；测试条件与结果后续定义 |
-| REQ-009 | 板载 USB-UART 连接 PC 与 STM32 UART | 后续原理图审查与通信测试 | 无需外置 USB-to-serial module，现有通信模型可评估复用 |
+| REQ-009 | 板载 USB-UART 经 galvanically isolated UART interface 连接 STM32 | 后续原理图审查、隔离边界检查与通信测试 | 无需外置 USB-to-serial module；PC USB ground 与 machine-side 24 V `0V` 不直接共地；现有通信模型可评估复用 |
 | REQ-010 | USB 不得 back-power machine-side power system | Power-state review + 插拔/掉电测试 | 所有相关供电状态下无非预期反向供电 |
 | REQ-011 | 24 V 输入保护并建立 protected 24V bus 与逻辑低压电源 | 后续设计审查与上电测试 | 保护与供电架构有官方依据，满足已确认负载与 fault boundary |
 | REQ-012 | CM35、Sensor 和 Power terminals 适合现场接线 | Mechanical/PCB review + 装配检查 | pitch/系列经确认，接线与维护可达性满足用户约束 |
@@ -139,13 +140,13 @@
 
 | ID | Question | Impact | Decision Needed By | Owner / Source | Qualification / Confirmation Plan | State |
 | --- | --- | --- | --- | --- | --- | --- |
-| OPEN-001 | USB-UART 是否进行 galvanic isolation？ | 决定 ground loop、噪声、故障传播、电源域和 BOM | Before Stage 2 selection | 用户 / 系统架构 | 结合现场接地、线缆与风险评估，比较候选隔离/非隔离架构；必要时规划验证 | Open |
-| OPEN-002 | 每个传感器读取 NO only 还是 NO + NC？ | 决定 MCU 输入数量、前端通道数、端口资源与诊断能力 | Before Stage 2 selection | 用户 / 应用需求 | 确认 C# / firmware 所需状态与断线/互补诊断语义 | Open |
+| OPEN-001 | USB-UART 是否进行 galvanic isolation？ | 决定 ground loop、噪声、故障传播、电源域和 BOM | Resolved in Stage 1 | 用户确认 | 采用 board-mounted USB-UART + galvanically isolated UART interface；具体 USB-UART / digital isolator 留待 Stage 2 qualification | Closed |
+| OPEN-002 | 每个传感器读取 NO only 还是 NO + NC？ | 决定 MCU 输入数量、前端通道数、端口资源与诊断能力 | Resolved in Stage 1 | 用户确认 | 每个传感器 NO + NC 均采集，4 × 2 = 8 路 MCU sensor digital inputs；具体 frontend 留待 Stage 2/3 | Closed |
 | OPEN-003 | USB connector 具体类型？ | 影响机械可靠性、装配、外壳和线缆 | Before Stage 2 selection | 用户 / Mechanical | 确认使用环境、插拔频率、线缆与 enclosure 约束后比较候选 | Open |
 | OPEN-004 | CM35 / Sensor / Power terminal 最终 pitch 和系列？ | 影响板尺寸、现场接线、装配方式与成本 | Select in Stage 2; freeze before Stage 5 | 用户 / Mechanical / JLCPCB capability | 比较约 5.0/5.08 mm 候选、pluggable 需求与 PCBA 可行性 | Open |
 | OPEN-005 | 24 V input protection architecture？ | 影响反接、surge/transient 能力、压降、热与安全 | Stage 2 | Stage 2 qualification | 根据现场风险和官方资料比较 fuse/PTC、TVS、反接等架构 | Open |
 | OPEN-006 | 24 V → 3.3 V power architecture？ | 影响效率、热、噪声、布局、成本与可采购性 | Stage 2 | Stage 2 qualification | 建立负载预算后基于官方资料和 JLCPCB/LCSC 可用性选型 | Open |
-| OPEN-007 | exact GPIO / USART pin allocation？ | 影响通道数量、boot/debug、安全状态与 PCB routing | Stage 3 | Stage 3 design | 在 OPEN-002 与通信架构冻结后进行资源分配、启动状态和冲突检查 | Open |
+| OPEN-007 | exact GPIO / USART pin allocation？ | 影响通道数量、boot/debug、安全状态与 PCB routing | Stage 3 | Stage 3 design | 按已确认的 8 路 sensor inputs 与隔离 UART 架构进行资源分配、启动状态和冲突检查 | Open |
 | OPEN-008 | exact isolation / sensor-interface components？ | 影响输入阈值、保护、速度、功耗、隔离与通道密度 | Select in Stage 2; qualify in Stage 3 | Stage 2/3 qualification | 根据冻结架构、官方资料、计算和环境约束选择并验证 | Open |
 | OPEN-009 | enclosure / PCB size / mounting constraints？ | 影响 connector 布局、板框、安装孔、散热和可维护性 | Collect before Stage 2; freeze before Stage 5 | 用户 / Mechanical | 收集可用空间、安装方式、禁布区、固定点及接线方向并确认 | Open |
 | OPEN-010 | 是否需要 indicator LEDs / additional diagnostic interface？ | 影响 GPIO、电源预算、面板可见性和调试效率 | Before Stage 2 selection | 用户 / Serviceability | 定义必须显示的 power/communication/I/O/fault 状态和可见性需求 | Open |
