@@ -5,7 +5,7 @@
 ## Board-level Intent
 
 - 新板以 STM32F103C8T6 直接集成为基础，不再依赖外购 minimum-system module；面向 JLCPCB SMT / PCBA。
-- USB-to-serial 功能板载，USB-UART 与 STM32 UART 之间采用 galvanic isolation；PC USB ground 与 machine-side 24 V `0V` 不直接共地。
+- USB-to-serial 功能板载，USB-UART 与 STM32 UART 之间采用 galvanic isolation；`USB_GND` 与 machine-side `GND` 不直接共地。
 - CM35 实际提供 IN1–IN18 与 OUT1–OUT8；本板使用 IN11–IN18 和 OUT1–OUT8，IN1–IN10 不属于本板控制范围。当前 reserved channels 仍是硬件边界的一部分。
 - 上一代 CM35 I/O 功能行为可作为 Legacy Functional Baseline。Stage 2 已检查归档上一代原理图，确认其电平转换主要使用 2N7002 MOSFET networks；用户已明确授权复用该转换思路，但 exact connection、resistor values 和 protection 不自动成为新板已验证事实。
 - 用户提供的 CM35 official-manual pages 确认：输入下拉至 `24G` 时为“通”，输入带抗干扰过滤且信号需保持至少约 2 ms；输出接线为负载位于 `+24 V` 与 OUT 之间，因此按 low-side / sinking behavior 处理，不推断未公开的内部 transistor topology。
@@ -22,18 +22,18 @@
 | Protocol polarity | Application `1=Active`; physical GPIO Active-Low; firmware inversion | 已验证系统行为与用户提供的 interface contract |
 | CM35 / Sensor conversion | 复用 legacy 2N7002 MOSFET conversion approach；Primary device = Nexperia 2N7002,215 | 用户授权 + archived legacy schematic review + Nexperia official data |
 | Sensor acquisition | 每个传感器独立 `+24V/0V/NO/NC` 端子并采集 NO+NC，共 8 路 inputs | 用户确认；OPEN-002 |
-| USB-UART / isolation | CH340C -> ISO7721DR -> STM32 UART；USB ground 与 machine-side 0V 不直连 | Stage 2 selection；OPEN-001 |
+| USB-UART / isolation | USB-C / USBLC6-2SC6 / CH340C on `USB_VBUS/USB_GND` ↔ ISO7721DR ↔ STM32 USART1 on `3V3/GND`; M3 current-session closeout acceptable | Stage 2 selection + Stage 3 manufacturer-data review + user-provided Altium screenshot |
 | 24 V input protection | 0468.500NRHF 0.5 A / 63 V Slo-Blo fuse + STPS2H100A series reverse-polarity protection + SMBJ30A-TR TVS -> protected 24V bus | Stage-2 0.225 A continuous design envelope + Littelfuse/ST official data；OPEN-005 |
 | 24 V -> 3.3 V | LMR36510FADDAR synchronous buck | Stage 2 official-source qualification；OPEN-006 |
 
-M1 当前 schematic architecture 已细化并达到 current-session module closeout acceptable；exact connections、values、L1 decision 与 validation boundary 由 `docs/module_design/m1_power.md` 持有。
+M1 当前 schematic architecture 已细化并达到 current-session module closeout acceptable；exact connections、values、L1 decision 与 validation boundary 由 `docs/module_design/m1_power.md` 持有。M3 exact USB/UART connections、power-state reasoning 与 isolation layout boundary 由 `docs/module_design/m3_usb_uart_isolation.md` 持有。
 
 ## Power and Interfaces
 
 | Domain / Interface | Source | Destination | Required Boundary |
 | --- | --- | --- | --- |
 | Machine power | External 24 V DC | M1 -> protected 24V bus / 3.3 V | reverse-polarity、overcurrent、surge/transient、长线；首次上电可限流 |
-| PC communication | PC USB | CH340C -> ISO7721DR -> STM32 UART | PC GND 与 machine 24 V 0V 不直接共地；不得 back-power machine side |
+| PC communication | PC USB | USB-C -> USBLC6-2SC6 -> CH340C -> ISO7721DR -> STM32 USART1 | `USB_GND` 与 machine `GND` 不直接共地；两侧分别由 `USB_VBUS` 与 `3V3` 供电；不得 back-power machine side |
 | CM35 control | STM32 GPIO | 2N7002 conversion -> CM35 IN11–IN18 | Pull-to-24G active；input filter requires ≥ about 2 ms；reset/boot safe inactive |
 | CM35 status | CM35 OUT1–OUT8 | 2N7002 conversion -> STM32 GPIO | CM35 low-side / sinking behavior；firmware 转正逻辑 DataOut |
 | Sensors | 4 × 24 V NPN NO+NC | protected 24V + 2N7002-based input conversion -> STM32 | 8 路 inputs；工业长线 protection/current limiting/filtering 仍需 Stage 3 qualification |
@@ -56,7 +56,7 @@ Current board-level architecture:
   -> 24V_PROTECTED
        -> SMBJ30A-TR to 0V
        -> Sensor / CM35 interface 24 V needs
-       -> LMR36510FADDAR -> 3V3_MACHINE
+       -> LMR36510FADDAR -> 3V3
 ```
 
 - LMR36510FADDAR is a 4.2–65 V, 1 A synchronous buck with high-voltage transient tolerance class suitable for this nominal 24 V architecture.
@@ -99,12 +99,14 @@ USB-C / USB_GND domain
   -> USBLC6-2SC6
   -> CH340C
   -> ISO7721DR isolation barrier
-  -> STM32 UART / machine-side 3.3 V domain
+  -> STM32 USART1 / 3V3 / GND domain
 ```
 
-- ISO7721DR provides one forward and one reverse digital channel, matching UART TX/RX direction needs.
-- USB side and machine side can each power their own side of the isolator; an isolated DC/DC is not automatically required solely to power the isolator because both domains already have independent supplies.
-- Stage 3 must still verify exact supply pins, decoupling, power-off behavior, UART idle state and no-back-power conditions.
+- ISO7721 side 1 is powered by `USB_VBUS/USB_GND`; side 2 is powered by `3V3/GND`. The galvanic barrier also performs the required 5 V-side / 3.3 V-side logic interfacing for the UART path.
+- Channel direction is frozen as `CH340_TX -> INB -> OUTB -> MCU_UART_RX/PA10` and `MCU_UART_TX/PA9 -> INA -> OUTA -> CH340_RX`.
+- The non-F/default-HIGH isolator behavior is compatible with UART idle HIGH for the intended USB-unplugged or machine-side-power-off state. Actual power-sequencing behavior remains a hardware validation item.
+- Each UART transmitter and its corresponding isolator input-side supply share the same local power domain in normal operation, reducing ordinary back-power risk; no additional isolation DC/DC or UART pull resistor is part of the current baseline.
+- USB-C shield/EH is directly terminated to `USB_GND` in the current design because no separate chassis/PE domain exists. Revisit only if later mechanical or EMC/ESD evidence creates a reason to change this boundary.
 
 ## Pin and Connection Planning
 
@@ -114,7 +116,7 @@ USB-C / USB_GND domain
 | --- | --- | --- | --- |
 | CM35 IN11–IN18 control | 8 outputs; LOW=Active, HIGH=Inactive | PB0 / PB1 / PB5 / PB6 / PB7 / PA8 / PA11 / PA12 | M4 external network must enforce safe inactive startup |
 | CM35 OUT1–OUT8 status | 8 inputs; LOW=Active, HIGH=Inactive | PA0–PA7 | Preserves one-to-one EXTI0–EXTI7 allocation |
-| USB-UART | Bidirectional USART1 | PA9 = MCU_UART_TX；PA10 = MCU_UART_RX | STM32 ↔ ISO7721DR ↔ CH340C |
+| USB-UART | Bidirectional USART1 | PA9 = MCU_UART_TX；PA10 = MCU_UART_RX | STM32 ↔ ISO7721DR ↔ CH340C；M3 current module closeout acceptable |
 | Sensor inputs | 4 × (NO+NC) = 8 inputs | PB8–PB15 | Preserves one-to-one EXTI8–EXTI15 allocation |
 | SWD | Programming and debug | PA13 = SWDIO；PA14 = SWCLK | 1×5 current interface also carries VTREF / 3V3, GND and NRST |
 | Boot / clock | Main Flash baseline；8 MHz HSE | PB2 = BOOT1；PD0 = OSC_IN；PD1 = OSC_OUT | BOOT0/BOOT1 default LOW；LSE not fitted |
@@ -126,6 +128,7 @@ PA0–PA7 and PB8–PB15 intentionally avoid EXTI line-number conflicts across a
 - Mechanical constraints：terminal 倾向约 5.0/5.08 mm、可插拔螺钉端子可评估；PCB size、enclosure、安装孔和连接器最终系列待确认。
 - Sensitive or high-risk areas：24 V input protection、long-line CM35/Sensor I/O、USB/machine isolation boundary、clock/VDDA、reset/boot、安全默认状态。
 - Power and thermal constraints：Stage-2 bounding load budget 与 F1 current class 已关闭；M1 Stage-3 external values and L1 are recorded, while exact capacitor qualification、thermal、startup 与 TVS/fuse interaction remain later validation items。
+- M3 layout boundary：USBLC6 靠近 USB-C，USB ESD return 保持短；CH340C 与 ISO7721 decoupling 靠近对应 pin；不得用 copper/pour/via/test point 跨接 `USB_GND` 与 `GND`；isolator barrier 区域保持所需 creepage/clearance。
 - Required official layout sources：STM32、CH340C、ISO7721DR、LMR36510、STPS2H100A、SMBJ30A、USBLC6-2SC6、2N7002 及 CM35/Sensor external-interface data。
 
 ## Open Decision References
