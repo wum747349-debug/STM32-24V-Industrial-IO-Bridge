@@ -22,11 +22,11 @@
 | Protocol polarity | Application `1=Active`; physical GPIO Active-Low; firmware inversion | 已验证系统行为与用户提供的 interface contract |
 | CM35 / Sensor conversion | 复用 legacy 2N7002 MOSFET conversion approach；Primary device = Nexperia 2N7002,215 | 用户授权 + archived legacy schematic review + Nexperia official data |
 | Sensor acquisition | 每个传感器独立 `+24V/0V/NO/NC` 端子并采集 NO+NC，共 8 路 inputs | 用户确认；OPEN-002 |
-| USB-UART / isolation | USB-C / USBLC6-2SC6 / CH340C on `USB_VBUS/USB_GND` ↔ ISO7721DR ↔ STM32 USART1 on `3V3/GND`; M3 current-session closeout acceptable | Stage 2 selection + Stage 3 manufacturer-data review + user-provided Altium screenshot |
+| USB-UART / isolation | USB side `USB_VBUS/USB_GND` ↔ ISO7721DR ↔ STM32 USART1 on machine-side `3V3/GND`; M3 current-session closeout acceptable | Stage 2 selection + Stage 3 manufacturer-data review + user-provided Altium screenshot |
 | 24 V input protection | 0468.500NRHF 0.5 A / 63 V Slo-Blo fuse + STPS2H100A series reverse-polarity protection + SMBJ30A-TR TVS -> protected 24V bus | Stage-2 0.225 A continuous design envelope + Littelfuse/ST official data；OPEN-005 |
 | 24 V -> 3.3 V | LMR36510FADDAR synchronous buck | Stage 2 official-source qualification；OPEN-006 |
 
-M1 当前 schematic architecture 已细化并达到 current-session module closeout acceptable；exact connections、values、L1 decision 与 validation boundary 由 `docs/module_design/m1_power.md` 持有。M3 exact USB/UART connections、power-state reasoning 与 isolation layout boundary 由 `docs/module_design/m3_usb_uart_isolation.md` 持有。
+M1 当前 schematic architecture 已细化并达到 current-session module closeout acceptable；exact connections、values、L1 decision 与 validation boundary 由 `docs/module_design/m1_power.md` 持有。M3 的 exact USB/UART connections、power-state/default behavior、shield termination 与 module-specific layout details 由 `docs/module_design/m3_usb_uart_isolation.md` 持有。
 
 ## Power and Interfaces
 
@@ -94,19 +94,9 @@ At 24 V and a deliberately conservative 75% buck-efficiency assumption, 250 mA a
 
 ## M3 Isolation Architecture Decision
 
-```text
-USB-C / USB_GND domain
-  -> USBLC6-2SC6
-  -> CH340C
-  -> ISO7721DR isolation barrier
-  -> STM32 USART1 / 3V3 / GND domain
-```
-
-- ISO7721 side 1 is powered by `USB_VBUS/USB_GND`; side 2 is powered by `3V3/GND`. The galvanic barrier also performs the required 5 V-side / 3.3 V-side logic interfacing for the UART path.
-- Channel direction is frozen as `CH340_TX -> INB -> OUTB -> MCU_UART_RX/PA10` and `MCU_UART_TX/PA9 -> INA -> OUTA -> CH340_RX`.
-- The non-F/default-HIGH isolator behavior is compatible with UART idle HIGH for the intended USB-unplugged or machine-side-power-off state. Actual power-sequencing behavior remains a hardware validation item.
-- Each UART transmitter and its corresponding isolator input-side supply share the same local power domain in normal operation, reducing ordinary back-power risk; no additional isolation DC/DC or UART pull resistor is part of the current baseline.
-- USB-C shield/EH is directly terminated to `USB_GND` in the current design because no separate chassis/PE domain exists. Revisit only if later mechanical or EMC/ESD evidence creates a reason to change this boundary.
+- M3 keeps the PC USB domain (`USB_VBUS/USB_GND`) galvanically isolated from the machine domain (`3V3/GND`) through ISO7721DR; `USB_GND` must not connect directly to machine `GND`.
+- STM32 USART1 remains PA9 = `MCU_UART_TX` and PA10 = `MCU_UART_RX`; M3 current-session module closeout is acceptable.
+- Exact USB-C / USBLC6-2SC6 / CH340C / ISO7721 connections, channel direction, default-HIGH / power-state reasoning, shield termination and module-specific layout constraints are owned by `docs/module_design/m3_usb_uart_isolation.md` and are not duplicated here.
 
 ## Pin and Connection Planning
 
