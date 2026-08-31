@@ -9,8 +9,8 @@
 - CM35 实际提供 IN1–IN18 与 OUT1–OUT8；本板使用 IN11–IN18 和 OUT1–OUT8，IN1–IN10 不属于本板控制范围。当前 reserved channels 仍是硬件边界的一部分。
 - 上一代 CM35 I/O 功能行为可作为 Legacy Functional Baseline。Stage 2 已检查归档上一代原理图，确认其电平转换主要使用 2N7002 MOSFET networks；用户已明确授权复用该转换思路，但 exact connection、resistor values 和 protection 不自动成为新板已验证事实。
 - 用户提供的 CM35 official-manual pages 确认：输入下拉至 `24G` 时为“通”，输入带抗干扰过滤且信号需保持至少约 2 ms；输出接线为负载位于 `+24 V` 与 OUT 之间，因此按 low-side / sinking behavior 处理，不推断未公开的内部 transistor topology。
-- CM35 `V/G` 是 I/O 隔离 24 V 供电端，`24V/0V` 是 controller system supply；官方资料建议两者使用隔离、不共地的 24 V source。Stage 3 必须明确本板的 CM35 I/O reference/domain connection。用户已确认实际设备存在 IN15–IN18。
-- 4 个传感器每个都提供 `+24V / 0V / NO / NC` 端子，并采集全部 NO + NC，共 8 路 sensor digital inputs；Stage 2 Primary conversion device 为 Nexperia 2N7002,215，外部 protection/filter details 仍待 Stage 3。
+- CM35 `V/G` 是 I/O 隔离 24 V 供电端，`24V/0V` 是 controller system supply；官方资料建议两者使用隔离、不共地的 24 V source。Rev.A 已明确采用同一 `MS-120-24` 为 CM35 controller、CM35 I/O 与 STM32 board 供电，并通过该电源 0 V 将 PCB `GND` 与 CM35 `G / 24G` 共参考。用户已确认实际设备存在 IN15–IN18。
+- 4 个传感器每个都提供 `+24V_PROTECTED / GND / NO / NC` 端子，并采集全部 NO + NC，共 8 路 sensor digital inputs；M5 单通道 2N7002 + series resistor + field-side TVS baseline 已定义，但整个模块 capture 尚未完成。
 - 板级设计优先考虑工业长线保护、safe startup、现场接线可维护性和首次限流上电。
 
 ## Current Decisions
@@ -21,12 +21,15 @@
 | CM35 channel scope | CM35 提供 IN1–IN18 / OUT1–OUT8；本板使用 IN11–IN18 / OUT1–OUT8 | 用户确认的系统边界；IN15–IN18 已由用户针对实际设备确认 |
 | Protocol polarity | Application `1=Active`; physical GPIO Active-Low; firmware inversion | 已验证系统行为与用户提供的 interface contract |
 | CM35 / Sensor conversion | 复用 legacy 2N7002 MOSFET conversion approach；Primary device = Nexperia 2N7002,215 | 用户授权 + archived legacy schematic review + Nexperia official data |
+| CM35 Rev.A power domain | CM35 controller、CM35 I/O 与 STM32 board 共用 `MS-120-24`；PCB `GND` 与 CM35 `G / 24G` 共参考；不增加 16-channel isolation | 用户确认的实际供电架构；接受 simplicity / isolation trade-off |
+| M4 module status | 16-channel CM35 interface 与 safe-startup design / current-session capture `CLOSEOUT ACCEPTABLE` | Stage 3 user-provided Altium screenshots；不代表 ERC、footprint 或 Stage 4 结果 |
 | Sensor acquisition | 每个传感器独立 `+24V/0V/NO/NC` 端子并采集 NO+NC，共 8 路 inputs | 用户确认；OPEN-002 |
+| M5 frontend status | 单通道 baseline 已定义并可复制；8-channel capture `IN PROGRESS` | Sensor 1 NO screenshot-level review + Littelfuse official SMF30A data |
 | USB-UART / isolation | USB side `USB_VBUS/USB_GND` ↔ ISO7721DR ↔ STM32 USART1 on machine-side `3V3/GND`; M3 current-session closeout acceptable | Stage 2 selection + Stage 3 manufacturer-data review + user-provided Altium screenshot |
 | 24 V input protection | 0468.500NRHF 0.5 A / 63 V Slo-Blo fuse + STPS2H100A series reverse-polarity protection + SMBJ30A-TR TVS -> protected 24V bus | Stage-2 0.225 A continuous design envelope + Littelfuse/ST official data；OPEN-005 |
 | 24 V -> 3.3 V | LMR36510FADDAR synchronous buck | Stage 2 official-source qualification；OPEN-006 |
 
-M1 当前 schematic architecture 已细化并达到 current-session module closeout acceptable；exact connections、values、L1 decision 与 validation boundary 由 `docs/module_design/m1_power.md` 持有。M3 的 exact USB/UART connections、power-state/default behavior、shield termination 与 module-specific layout details 由 `docs/module_design/m3_usb_uart_isolation.md` 持有。
+M1 当前 schematic architecture 已细化并达到 current-session module closeout acceptable；exact connections、values、L1 decision 与 validation boundary 由 `docs/module_design/m1_power.md` 持有。M3 的 exact USB/UART connections、power-state/default behavior、shield termination 与 module-specific layout details 由 `docs/module_design/m3_usb_uart_isolation.md` 持有。M4/M5 的 channel-level mapping、values、connector pin order 与 evidence boundary 分别由 `docs/module_design/m4_cm35_io.md` 和 `docs/module_design/m5_sensor_interface.md` 持有。
 
 ## Power and Interfaces
 
@@ -34,9 +37,9 @@ M1 当前 schematic architecture 已细化并达到 current-session module close
 | --- | --- | --- | --- |
 | Machine power | External 24 V DC | M1 -> protected 24V bus / 3.3 V | reverse-polarity、overcurrent、surge/transient、长线；首次上电可限流 |
 | PC communication | PC USB | USB-C -> USBLC6-2SC6 -> CH340C -> ISO7721DR -> STM32 USART1 | `USB_GND` 与 machine `GND` 不直接共地；两侧分别由 `USB_VBUS` 与 `3V3` 供电；不得 back-power machine side |
-| CM35 control | STM32 GPIO | 2N7002 conversion -> CM35 IN11–IN18 | Pull-to-24G active；input filter requires ≥ about 2 ms；reset/boot safe inactive |
-| CM35 status | CM35 OUT1–OUT8 | 2N7002 conversion -> STM32 GPIO | CM35 low-side / sinking behavior；firmware 转正逻辑 DataOut |
-| Sensors | 4 × 24 V NPN NO+NC | protected 24V + 2N7002-based input conversion -> STM32 | 8 路 inputs；工业长线 protection/current limiting/filtering 仍需 Stage 3 qualification |
+| CM35 control | STM32 GPIO | 2N7002 conversion -> CM35 IN11–IN18 | Common `GND` / `G / 24G` reference；pull-to-24G active；reset/boot safe inactive；M4 closeout acceptable |
+| CM35 status | CM35 OUT1–OUT8 | 2N7002 conversion -> STM32 GPIO | Common reference；CM35 low-side / sinking behavior；firmware 转正逻辑 DataOut；M4 closeout acceptable |
+| Sensors | 4 × 24 V NPN NO+NC | `24V_PROTECTED` + 2N7002-based input conversion -> STM32 | 8 路 inputs；per-channel protection baseline defined；capture still in progress |
 
 ## 24 V Source Evidence Boundary
 
@@ -111,7 +114,7 @@ At 24 V and a deliberately conservative 75% buck-efficiency assumption, 250 mA a
 | SWD | Programming and debug | PA13 = SWDIO；PA14 = SWCLK | 1×5 current interface also carries VTREF / 3V3, GND and NRST |
 | Boot / clock | Main Flash baseline；8 MHz HSE | PB2 = BOOT1；PD0 = OSC_IN；PD1 = OSC_OUT | BOOT0/BOOT1 default LOW；LSE not fitted |
 
-PA0–PA7 and PB8–PB15 intentionally avoid EXTI line-number conflicts across all 16 external inputs. PA15 / PB3 / PB4 are SWJ/JTAG-related pins at reset；future GPIO use requires firmware to release JTAG resources. M2 does not depend on MCU reset GPIO state for CM35 safety: M4 must implement the cross-module contract `MCU high-Z -> 3.3 V pull-up -> 2N7002 OFF -> 24 V side HIGH -> CM35 inactive`; the exact M4 network is not yet verified.
+PA0–PA7 and PB8–PB15 intentionally avoid EXTI line-number conflicts across all 16 external inputs. PA15 / PB3 / PB4 are SWJ/JTAG-related pins at reset；future GPIO use requires firmware to release JTAG resources. M2 does not depend on MCU reset GPIO state for CM35 safety: M4 implements the cross-module contract `MCU high-Z -> 3V3 pull-up -> 2N7002 OFF -> 24 V side HIGH -> CM35 inactive`; current-session screenshots support module closeout, while `.SchDoc` parsing、ERC and hardware behavior remain unverified.
 
 ## PCB Inputs
 

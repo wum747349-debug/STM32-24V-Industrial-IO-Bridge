@@ -63,10 +63,10 @@
 ### CM35 → STM32（OUT1–OUT8）
 
 - 保留 8 路硬件通道；用户提供的 CM35 official-manual pages 显示负载连接在 `+24 V` 与 `OUT1–OUT8` 之间，因此输出按 low-side / sinking behavior qualification；没有证据时不进一步声明内部 transistor topology。Stage 2 对归档旧原理图的检查另确认 legacy readback 使用 2N7002 MOSFET networks，而不是 optocoupler。
-- 上一代系统行为仍为 CM35 Active → STM32 GPIO LOW，Inactive → GPIO HIGH；新设计的 exact resistor values、输入保护与阈值必须在 Stage 3 结合 CM35 当期电气资料重新 qualification。
+- 上一代系统行为仍为 CM35 Active → STM32 GPIO LOW，Inactive → GPIO HIGH；Stage 3 已定义 2N7002 + 10 kΩ / 10 kΩ、无默认 RC 的 Rev.A baseline。由于 CM35 exact threshold/current/VOL/leakage 参数仍不可得，后续正式审查仍须保留 electrical-limit verification boundary。
 - Protocol / Application contract：`DataOut = 1` 表示当前状态 Active，`DataOut = 0` 表示 Inactive。
 - firmware 必须执行 Active-Low → positive protocol semantic inversion。
-- CM35 `V/G` 是 I/O 隔离 24 V 电源正/负端，`24V/0V` 是 controller system supply；官方资料建议二者使用隔离、不共地的 24 V source。Stage 3 必须明确本板与 CM35 I/O reference/domain 的具体连接关系。
+- CM35 `V/G` 是 I/O 隔离 24 V 电源正/负端，`24V/0V` 是 controller system supply；官方资料建议二者使用隔离、不共地的 24 V source。Rev.A 已明确由同一 `MS-120-24` 为 CM35 controller、CM35 I/O 与 STM32 board 供电，PCB `GND` 与 CM35 `G / 24G` 共参考；这是已接受的 simplicity / isolation trade-off。
 
 ### CM35 Handshake Protocol — Version B
 
@@ -150,6 +150,6 @@
 | OPEN-005 | 24 V input protection architecture？ | 影响反接、surge/transient 能力、压降、热与安全 | Resolved in Stage 2 | 用户 measurement + Stage 2 qualification | 采用 0468.500NRHF 0.5 A Slo-Blo fuse + STPS2H100A + SMBJ30A-TR + protected 24V bus；exact startup/time-current、surge waveform/source impedance 与 thermal margin 留待 Stage 3 | Closed |
 | OPEN-006 | 24 V → 3.3 V power architecture？ | 影响效率、热、噪声、布局、成本与可采购性 | Resolved in Stage 2 | Stage 2 qualification | Primary 采用 LMR36510FADDAR 65 V / 1 A class synchronous buck；Stage-2 0.25 A output envelope PASS，exact inductor/FB/capacitors/ripple/thermal 留待 Stage 3 | Closed |
 | OPEN-007 | exact GPIO / USART pin allocation？ | 影响通道数量、boot/debug、安全状态与 PCB routing | Stage 3 | Stage 3 design | 按已确认的 8 路 sensor inputs 与隔离 UART 架构进行资源分配、启动状态和冲突检查 | Open |
-| OPEN-008 | exact CM35 / Sensor external-interface values and protection network？ | 影响阈值、保护、功耗与抗扰度；Stage-2 topology 已确定 | Stage 3 | Stage 3 parameter design + external-device evidence | 保持 2N7002 Primary；结合 exact threshold/current、resistor、RC、ESD/transient/current-limiting requirements 完成 qualification | Open |
+| OPEN-008 | exact CM35 / Sensor external-interface values and protection network？ | 影响阈值、保护、功耗与抗扰度；Stage-2 topology 已确定 | Resolved in Stage 3 | Stage 3 module design + current-session screenshot evidence + Littelfuse official data | M4 16-channel baseline 与 common-reference domain 已关闭；M5 per-channel 2N7002 / 100 Ω / SMF30A / no-RC baseline 已定义，module capture completeness 仍由 M5 文档跟踪 | Closed |
 | OPEN-009 | enclosure / PCB size / mounting constraints？ | 影响 connector 布局、板框、安装孔、散热和可维护性 | Before Stage 5 Layout Preflight | 用户 / Mechanical | 收集可用空间、安装方式、禁布区、固定点及接线方向并确认 | Open |
 | OPEN-010 | 是否需要 indicator LEDs / additional diagnostic interface？ | 影响 GPIO、电源预算、面板可见性和调试效率；属于 ordinary peripheral scope | Stage 3 module planning | 用户 / Serviceability | 定义必须显示的 power/communication/I/O/fault 状态和可见性需求；未决定不阻断 Stage 2 | Open |
