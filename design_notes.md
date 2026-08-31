@@ -9,8 +9,8 @@
 - CM35 实际提供 IN1–IN18 与 OUT1–OUT8；本板使用 IN11–IN18 和 OUT1–OUT8，IN1–IN10 不属于本板控制范围。当前 reserved channels 仍是硬件边界的一部分。
 - 上一代 CM35 I/O 功能行为可作为 Legacy Functional Baseline。Stage 2 已检查归档上一代原理图，确认其电平转换主要使用 2N7002 MOSFET networks；用户已明确授权复用该转换思路，但 exact connection、resistor values 和 protection 不自动成为新板已验证事实。
 - 用户提供的 CM35 official-manual pages 确认：输入下拉至 `24G` 时为“通”，输入带抗干扰过滤且信号需保持至少约 2 ms；输出接线为负载位于 `+24 V` 与 OUT 之间，因此按 low-side / sinking behavior 处理，不推断未公开的内部 transistor topology。
-- CM35 `V/G` 是 I/O 隔离 24 V 供电端，`24V/0V` 是 controller system supply；官方资料建议两者使用隔离、不共地的 24 V source。Rev.A 已明确采用同一 `MS-120-24` 为 CM35 controller、CM35 I/O 与 STM32 board 供电，并通过该电源 0 V 将 PCB `GND` 与 CM35 `G / 24G` 共参考。用户已确认实际设备存在 IN15–IN18。
-- 4 个传感器每个都提供 `+24V_PROTECTED / GND / NO / NC` 端子，并采集全部 NO + NC，共 8 路 sensor digital inputs；M5 单通道 2N7002 + series resistor + field-side TVS baseline 已定义，但整个模块 capture 尚未完成。
+- CM35 `V/G` 是 I/O 隔离 24 V 供电端，`24V/0V` 是 controller system supply。Rev.A 采用两套独立、隔离输出的 24 V switching PSU：PSU A 只供 CM35 system `24V/0V`；PSU B 直接分配至 CM35 I/O `V/G` 和 PCB `24V/GND`。PCB `GND = CM35 G / 24G = PSU B -V`，不得直接连接 CM35 system `0V`、PSU A `-V`、PE 或 chassis。用户已确认实际设备存在 IN15–IN18。
+- 4 个传感器每个都提供 `+24V_PROTECTED / GND / NO / NC` 端子，并采集全部 NO + NC，共 8 路 sensor digital inputs；M5 全 8 路 2N7002 + series resistor + field-side TVS capture 已完成当前会话 screenshot-level completeness review。
 - 板级设计优先考虑工业长线保护、safe startup、现场接线可维护性和首次限流上电。
 
 ## Current Decisions
@@ -21,10 +21,10 @@
 | CM35 channel scope | CM35 提供 IN1–IN18 / OUT1–OUT8；本板使用 IN11–IN18 / OUT1–OUT8 | 用户确认的系统边界；IN15–IN18 已由用户针对实际设备确认 |
 | Protocol polarity | Application `1=Active`; physical GPIO Active-Low; firmware inversion | 已验证系统行为与用户提供的 interface contract |
 | CM35 / Sensor conversion | 复用 legacy 2N7002 MOSFET conversion approach；Primary device = Nexperia 2N7002,215 | 用户授权 + archived legacy schematic review + Nexperia official data |
-| CM35 Rev.A power domain | CM35 controller、CM35 I/O 与 STM32 board 共用 `MS-120-24`；PCB `GND` 与 CM35 `G / 24G` 共参考；不增加 16-channel isolation | 用户确认的实际供电架构；接受 simplicity / isolation trade-off |
+| CM35 Rev.A power domain | PSU A -> CM35 system `24V/0V`；独立 PSU B -> CM35 I/O `V/G` + PCB `24V/GND`；`PCB GND = CM35 G / 24G`，且 `PSU A -V != PSU B -V`；不增加 per-channel isolation | CM35 official-manual evidence + 用户最终系统架构决策 |
 | M4 module status | 16-channel CM35 interface 与 safe-startup design / current-session capture `CLOSEOUT ACCEPTABLE` | Stage 3 user-provided Altium screenshots；不代表 ERC、footprint 或 Stage 4 结果 |
 | Sensor acquisition | 每个传感器独立 `+24V/0V/NO/NC` 端子并采集 NO+NC，共 8 路 inputs | 用户确认；OPEN-002 |
-| M5 frontend status | 单通道 baseline 已定义并可复制；8-channel capture `IN PROGRESS` | Sensor 1 NO screenshot-level review + Littelfuse official SMF30A data |
+| M5 frontend status | 8-channel capture `CLOSEOUT ACCEPTABLE` | 全 8 路 current-session screenshot-level completeness review + Littelfuse official SMF30A data |
 | USB-UART / isolation | USB side `USB_VBUS/USB_GND` ↔ ISO7721DR ↔ STM32 USART1 on machine-side `3V3/GND`; M3 current-session closeout acceptable | Stage 2 selection + Stage 3 manufacturer-data review + user-provided Altium screenshot |
 | 24 V input protection | 0468.500NRHF 0.5 A / 63 V Slo-Blo fuse + STPS2H100A series reverse-polarity protection + SMBJ30A-TR TVS -> protected 24V bus | Stage-2 0.225 A continuous design envelope + Littelfuse/ST official data；OPEN-005 |
 | 24 V -> 3.3 V | LMR36510FADDAR synchronous buck | Stage 2 official-source qualification；OPEN-006 |
@@ -35,11 +35,32 @@ M1 当前 schematic architecture 已细化并达到 current-session module close
 
 | Domain / Interface | Source | Destination | Required Boundary |
 | --- | --- | --- | --- |
-| Machine power | External 24 V DC | M1 -> protected 24V bus / 3.3 V | reverse-polarity、overcurrent、surge/transient、长线；首次上电可限流 |
+| CM35 system power | Isolated-output PSU A | CM35 `24V/0V` only | PSU A `-V` 不得直接连接 PSU B `-V`、PCB `GND`、CM35 `G/24G`、PE 或 chassis |
+| Isolated I/O power | Independent isolated-output PSU B | Cabinet-direct CM35 `V/G` distribution + PCB M1 input | `PCB GND = CM35 G / 24G = PSU B -V`；CM35 `V/G` 不经过 PCB F1 |
 | PC communication | PC USB | USB-C -> USBLC6-2SC6 -> CH340C -> ISO7721DR -> STM32 USART1 | `USB_GND` 与 machine `GND` 不直接共地；两侧分别由 `USB_VBUS` 与 `3V3` 供电；不得 back-power machine side |
-| CM35 control | STM32 GPIO | 2N7002 conversion -> CM35 IN11–IN18 | Common `GND` / `G / 24G` reference；pull-to-24G active；reset/boot safe inactive；M4 closeout acceptable |
-| CM35 status | CM35 OUT1–OUT8 | 2N7002 conversion -> STM32 GPIO | Common reference；CM35 low-side / sinking behavior；firmware 转正逻辑 DataOut；M4 closeout acceptable |
-| Sensors | 4 × 24 V NPN NO+NC | `24V_PROTECTED` + 2N7002-based input conversion -> STM32 | 8 路 inputs；per-channel protection baseline defined；capture still in progress |
+| CM35 control | STM32 GPIO | 2N7002 conversion -> CM35 IN11–IN18 | Shared PSU-B I/O-domain `GND` / `G / 24G` reference；pull-to-24G active；reset/boot safe inactive；M4 closeout acceptable |
+| CM35 status | CM35 OUT1–OUT8 | 2N7002 conversion -> STM32 GPIO | Shared PSU-B I/O-domain reference；CM35 low-side / sinking behavior；firmware 转正逻辑 DataOut；M4 closeout acceptable |
+| Sensors | 4 × 24 V NPN NO+NC | `24V_PROTECTED` + 2N7002-based input conversion -> STM32 | Same PSU-B I/O domain；8 路 inputs；M5 closeout acceptable |
+
+## Rev.A System Power-domain Architecture
+
+```text
+CM35 System Domain
+  PSU A +24 V -> CM35 24V
+  PSU A -V    -> CM35 0V
+
+Isolated I/O Domain
+  PSU B +24 V -> CM35 V             (cabinet terminal distribution)
+  PSU B -V    -> CM35 G / 24G       (cabinet terminal distribution)
+  PSU B +24 V -> PCB 24V input
+  PSU B -V    -> PCB GND
+                 -> PCB M1 -> F1 -> reverse-polarity protection
+                 -> 24V_PROTECTED -> M4 pull-ups / M5 sensors / LMR36510 -> 3V3
+
+Isolation rule: PSU A -V != PSU B -V
+```
+
+CM35 `V/G` is not powered through PCB F1 or `24V_PROTECTED`, and the PCB does not add a CM35 `V/G` power-output connector. Exact PSU-B procurement, manufacturer, and current rating remain later system-integration items.
 
 ## 24 V Source Evidence Boundary
 
@@ -53,12 +74,12 @@ M1 当前 schematic architecture 已细化并达到 current-session module close
 Current board-level architecture:
 
 ```text
-24V INPUT
+PSU B +24V -> PCB 24V INPUT
   -> 0468.500NRHF 0.5 A / 63 V Slo-Blo fuse
   -> STPS2H100A series reverse-polarity diode
   -> 24V_PROTECTED
-       -> SMBJ30A-TR to 0V
-       -> Sensor / CM35 interface 24 V needs
+       -> SMBJ30A-TR to GND
+       -> M4 pull-ups / M5 sensors
        -> LMR36510FADDAR -> 3V3
 ```
 
@@ -69,12 +90,12 @@ Current board-level architecture:
 
 ## Stage-2 Bounding Power Budget
 
-本预算只用于关键器件 current-class selection；它不是 Stage-3 ripple、magnetics、startup 或 thermal calculation。
+本预算只用于 PCB branch 及其 board-powered loads 的关键器件 current-class selection；它不是 Stage-3 ripple、magnetics、startup 或 thermal calculation，也不是包含 CM35 I/O consumption 在内的完整 PSU-B cabinet-supply sizing value。本 transaction 不重新计算或指定 PSU-B rating。
 
 | Load | Stage-2 allowance | Basis / limitation |
 | --- | ---: | --- |
 | 4 × AN-LS18-40-N sensor supply | ≤40 mA @ 24 V | User-provided manual states ≤10 mA each；manufacturer provenance provisional |
-| CM35 16-channel interface circuitry | 80 mA @ 24 V | Conservative 5 mA/channel allocation；exact CM35 input current/output-load parameters are Stage-3 inputs |
+| CM35 16-channel interface circuitry | 80 mA @ 24 V | Conservative PCB-side 5 mA/channel allocation；exact CM35 input current/output-load parameters remain formal-review inputs and do not size the complete PSU-B cabinet supply |
 | STM32F103C8T6 | 60 mA @ 3.3 V | Conservative architecture allowance, not an operating-point prediction |
 | ISO7721 machine-side supply | 10 mA @ 3.3 V | Includes logic-rate allowance |
 | Machine-side pull-ups / interface logic | 40 mA @ 3.3 V | Bounding allocation pending exact values |
@@ -82,6 +103,17 @@ Current board-level architecture:
 | 3.3 V engineering reserve | 100 mA @ 3.3 V | Raises the 3.3 V design envelope to 250 mA |
 
 At 24 V and a deliberately conservative 75% buck-efficiency assumption, 250 mA at 3.3 V corresponds to about 46 mA input. Sensors + CM35 allocation + buck input total about 166 mA; the Stage-2 24 V continuous design envelope is rounded up to **225 mA**, leaving about 59 mA additional board-level reserve.
+
+The historical CM35 interface allocation in this Stage-2 envelope bounded PCB-side interface pull-ups and related board circuitry; it must not be interpreted as the complete cabinet-distributed CM35 `V/G` supply current. Final PSU-B sizing must include the actual CM35 I/O-domain load separately.
+
+## Stage 3 Cross-Module Integration Closeout
+
+- Power Flow: PSU A and PSU B domains are explicitly separated; the PSU-B PCB branch feeds M1/F1, `24V_PROTECTED`, sensors, M4 pull-ups, and `3V3`, while CM35 `V/G` is cabinet-fed directly.
+- Signal / Control Flow: USB-UART, STM32, CM35 IN/OUT, and all eight sensor NO/NC mappings are recorded without responsibility gaps.
+- Voltage / Logic Compatibility: M4 and M5 retain the reviewed 2N7002 Active-Low translation; USB/machine isolation remains unchanged.
+- Startup / Shutdown / Fault State: M4 safe-startup remains hardware-enforced; USB back-power and unverified transient/thermal behavior remain explicit later-review boundaries.
+- Cross-sheet Net Consistency: current-session visible evidence uses `3V3`, `24V_PROTECTED`, `GND`, `USB_GND`, and the recorded channel names consistently; this is screenshot/PDF evidence, not `.SchDoc` object parsing.
+- Missing / Conflicting Responsibility: no Stage-3 module responsibility conflict remains. The complete same-date schematic PDF and BOM are available locally, so the Stage-3 conclusion is **READY FOR SCHEMATIC REVIEW**.
 
 - LMR36510FADDAR：0.25 A output envelope versus 1 A rating → current-class margin PASS。
 - STPS2H100A：0.225 A input envelope versus 2 A rating → current-class margin PASS；exact forward-loss/thermal verification remains Stage 3。
@@ -91,7 +123,7 @@ At 24 V and a deliberately conservative 75% buck-efficiency assumption, 250 mA a
 
 - Primary：Littelfuse `0468.500NRHF`，0.5 A / 63 V，1206 Slo-Blo fuse，LCSC C206993。
 - Manufacturer basis：50 A interrupting rating at 63 VAC/VDC；time-delay behavior is specified to tolerate inrush. Littelfuse requires a standard 25% continuous-operation derating plus temperature re-rating. At 70°C the datasheet example gives usable continuous current `0.75 × 0.80 × 0.5 A = 0.30 A`, still about 33% above the 0.225 A envelope.
-- Startup boundary：0.5 A is accepted for Stage 2 because the time-delay characteristic provides input-capacitor/startup tolerance without moving immediately to a 1 A class. Stage 3 must compare the final Cin/sensor startup pulse with the time-current curve and local temperature. If allowable continuous current falls to or below 0.225 A, or startup nuisance opening is predicted, reassess the 468 Series 1 A member and verify its exact orderable MPN rather than silently changing F1.
+- Startup boundary：0.5 A is accepted because the time-delay characteristic provides input-capacitor/startup tolerance without moving immediately to a 1 A class. Final startup/inrush and local-temperature evidence remain later verification inputs. If allowable continuous current falls to or below 0.225 A, or startup nuisance opening is predicted, reassess the 468 Series 1 A member and verify its exact orderable MPN rather than silently changing F1.
 - Fault boundary：the 50 A interrupt rating does not by itself prove coordination with the PSU peak fault current or field wiring；those source/fault-path inputs remain unverified, and no system safety-standard claim is made.
 - Alternate architecture：Littelfuse `1210L035/60PR` PPTC，0.35 A hold / 0.70 A trip at 20°C，60 V max，10 A max fault current. It is not Primary because hold current falls to 0.24 A at 60°C and 0.21 A at 70°C, its resistance can rise to 1.5 Ω after trip/reflow, it dissipates about 1.5 W tripped, and it continues residual current during a sustained fault. Use only after application-temperature、voltage drop/heating、trip/recovery and sustained-fault verification.
 

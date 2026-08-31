@@ -8,9 +8,25 @@
 
 ## Power-domain Decision
 
-Rev.A uses a common-reference implementation. The CM35 controller, CM35 I/O domain, and STM32 board are supplied from the same `MS-120-24` 24 V / 5 A / 120 W supply. PCB `GND` and CM35 I/O `G / 24G` therefore share that supply's 0 V reference; `24V_PROTECTED` is the PCB rail after M1 fuse and reverse-polarity protection.
+Rev.A separates the CM35 controller system supply from the isolated I/O supply, following the user-provided CM35 official-manual evidence:
 
-The CM35 official material recommends isolated, non-common-ground supplies for controller system power and I/O power. Rev.A intentionally accepts the simpler common-reference architecture and does not add 16-channel optocoupler or digital isolation. If stronger galvanic isolation becomes a requirement, first reassess the isolated 24 V power/domain architecture rather than automatically adding isolation independently to all 16 channels.
+```text
+CM35 system domain
+  PSU A +24 V -> CM35 24V
+  PSU A -V    -> CM35 0V
+
+Isolated I/O domain
+  PSU B +24 V -> CM35 V
+  PSU B -V    -> CM35 G / 24G
+  PSU B +24 V -> PCB 24V input
+  PSU B -V    -> PCB GND
+```
+
+Therefore `PCB GND = CM35 G / 24G = PSU B -V`. This node **MUST NOT** be directly connected to CM35 system `0V`, PSU A `-V`, PE, or chassis; `PSU A -V != PSU B -V`. The exact PSU-B model, manufacturer, and current rating remain a later procurement/system-integration decision.
+
+CM35 `V/G` receives cabinet-distributed PSU-B power directly at the terminal distribution. It is not powered from the PCB and must not be routed through PCB F1 or exported from `24V_PROTECTED`. The PCB branch remains `PSU B +24 V -> M1 -> F1 -> reverse-polarity protection -> 24V_PROTECTED` for M4 pull-ups, M5 sensors, and LMR36510-derived `3V3`.
+
+The existing 16-channel 2N7002 circuit, GPIO mapping, Active-Low behavior, and safe-startup contract remain unchanged and **CLOSEOUT ACCEPTABLE**. Rev.A does not add 16-channel optocouplers, per-channel digital isolation, a PCB isolated DC/DC, or a new CM35 `V/G` power-output connector because the PCB and CM35 I/O belong to the same isolated PSU-B I/O domain.
 
 ## Repeated Channel Topology
 

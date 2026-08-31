@@ -136,7 +136,7 @@ Deferred to Stage 3:
 
 - exact GPIO / USART allocation；MCU crystal/load capacitors、boot/reset values and ordinary decoupling；
 - LMR36510 inductor、feedback divider、Cin/Cout、startup waveform、ripple、thermal and detailed loss calculations；
-- exact CM35 / Sensor resistor、RC、ESD/transient/current-limiting networks and CM35 V/G reference/domain connection；
+- exact CM35 / Sensor resistor、RC、ESD/transient/current-limiting networks and CM35 V/G reference/domain connection（closed in Stage 3 module records；Rev.A uses the isolated PSU-B I/O domain）；
 - F1 final local-temperature/time-current verification and STPS2H100A exact forward-loss；
 - LEDs、test points and ordinary peripherals。
 
