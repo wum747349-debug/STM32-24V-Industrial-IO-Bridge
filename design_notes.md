@@ -17,7 +17,7 @@
 
 | Architecture Fact | Current Position | Basis |
 | --- | --- | --- |
-| 主控 | STM32F103C8T6 直接集成到 PCB；implementation not started | 用户确认的项目目标；Stage 2 official-source qualification |
+| 主控 | STM32F103C8T6 直接集成到 PCB；M2 current-session module closeout acceptable | 用户确认的项目目标；Stage 2 qualification + Stage 3 user/ChatGPT session review |
 | CM35 channel scope | CM35 提供 IN1–IN18 / OUT1–OUT8；本板使用 IN11–IN18 / OUT1–OUT8 | 用户确认的系统边界；IN15–IN18 已由用户针对实际设备确认 |
 | Protocol polarity | Application `1=Active`; physical GPIO Active-Low; firmware inversion | 已验证系统行为与用户提供的 interface contract |
 | CM35 / Sensor conversion | 复用 legacy 2N7002 MOSFET conversion approach；Primary device = Nexperia 2N7002,215 | 用户授权 + archived legacy schematic review + Nexperia official data |
@@ -25,6 +25,8 @@
 | USB-UART / isolation | CH340C -> ISO7721DR -> STM32 UART；USB ground 与 machine-side 0V 不直连 | Stage 2 selection；OPEN-001 |
 | 24 V input protection | 0468.500NRHF 0.5 A / 63 V Slo-Blo fuse + STPS2H100A series reverse-polarity protection + SMBJ30A-TR TVS -> protected 24V bus | Stage-2 0.225 A continuous design envelope + Littelfuse/ST official data；OPEN-005 |
 | 24 V -> 3.3 V | LMR36510FADDAR synchronous buck | Stage 2 official-source qualification；OPEN-006 |
+
+M1 当前 schematic architecture 已细化并达到 current-session module closeout acceptable；exact connections、values、L1 decision 与 validation boundary 由 `docs/module_design/m1_power.md` 持有。
 
 ## Power and Interfaces
 
@@ -45,7 +47,7 @@
 
 ## M1 Power Architecture Decision
 
-Current Stage 2 architecture:
+Current board-level architecture:
 
 ```text
 24V INPUT
@@ -59,7 +61,8 @@ Current Stage 2 architecture:
 
 - LMR36510FADDAR is a 4.2–65 V, 1 A synchronous buck with high-voltage transient tolerance class suitable for this nominal 24 V architecture.
 - SMBJ30A-TR uses a 30 V stand-off level so it remains off at the measured ~24 V operating point while providing transient suppression below the converter absolute high-voltage boundary under the currently assumed source conditions.
-- Exact surge waveform/source impedance, input bulk capacitance startup and local-temperature verification remain Stage 3 calculations, not compliance claims.
+- M1 current-session module design / EDA capture closeout is acceptable；exact values and remaining validation boundaries are maintained in `docs/module_design/m1_power.md`，not duplicated here.
+- Exact surge waveform/source impedance, startup/inrush coordination、capacitor DC-bias、thermal and layout verification remain open；no compliance claim is made.
 
 ## Stage-2 Bounding Power Budget
 
@@ -109,17 +112,20 @@ USB-C / USB_GND domain
 
 | Function | Required Direction / Behavior | Candidate Mapping | Basis |
 | --- | --- | --- | --- |
-| CM35 IN11–IN18 control | 8 outputs; LOW=Active, HIGH=Inactive | TBD MCU pins | exact MCU pins 留待 Stage 3；2N7002 conversion approach 已选 |
-| CM35 OUT1–OUT8 status | 8 inputs; LOW=Active, HIGH=Inactive | TBD MCU pins | exact MCU pins 留待 Stage 3；legacy MOSFET readback wording 已纠正 |
-| USB-UART | Bidirectional UART | TBD USART | CH340C + ISO7721DR 已选；exact USART / pins 留待 Stage 3 |
-| Sensor inputs | 4 × (NO+NC) = 8 inputs | TBD MCU pins | OPEN-002 已确认通道数量；2N7002 Primary 已选 |
-| SWD / reset / boot | Programming, debug and safe startup | TBD | Stage 3 必须覆盖；不在 Stage 2 固化普通外围值 |
+| CM35 IN11–IN18 control | 8 outputs; LOW=Active, HIGH=Inactive | PB0 / PB1 / PB5 / PB6 / PB7 / PA8 / PA11 / PA12 | M4 external network must enforce safe inactive startup |
+| CM35 OUT1–OUT8 status | 8 inputs; LOW=Active, HIGH=Inactive | PA0–PA7 | Preserves one-to-one EXTI0–EXTI7 allocation |
+| USB-UART | Bidirectional USART1 | PA9 = MCU_UART_TX；PA10 = MCU_UART_RX | STM32 ↔ ISO7721DR ↔ CH340C |
+| Sensor inputs | 4 × (NO+NC) = 8 inputs | PB8–PB15 | Preserves one-to-one EXTI8–EXTI15 allocation |
+| SWD | Programming and debug | PA13 = SWDIO；PA14 = SWCLK | 1×5 current interface also carries VTREF / 3V3, GND and NRST |
+| Boot / clock | Main Flash baseline；8 MHz HSE | PB2 = BOOT1；PD0 = OSC_IN；PD1 = OSC_OUT | BOOT0/BOOT1 default LOW；LSE not fitted |
+
+PA0–PA7 and PB8–PB15 intentionally avoid EXTI line-number conflicts across all 16 external inputs. PA15 / PB3 / PB4 are SWJ/JTAG-related pins at reset；future GPIO use requires firmware to release JTAG resources. M2 does not depend on MCU reset GPIO state for CM35 safety: M4 must implement the cross-module contract `MCU high-Z -> 3.3 V pull-up -> 2N7002 OFF -> 24 V side HIGH -> CM35 inactive`; the exact M4 network is not yet verified.
 
 ## PCB Inputs
 
 - Mechanical constraints：terminal 倾向约 5.0/5.08 mm、可插拔螺钉端子可评估；PCB size、enclosure、安装孔和连接器最终系列待确认。
 - Sensitive or high-risk areas：24 V input protection、long-line CM35/Sensor I/O、USB/machine isolation boundary、clock/VDDA、reset/boot、安全默认状态。
-- Power and thermal constraints：Stage-2 bounding load budget 与 F1 current class 已关闭；LMR36510 external component values / thermal、STPS2H100A exact dissipation、startup 与 TVS/fuse interaction 留待 Stage 3 计算。
+- Power and thermal constraints：Stage-2 bounding load budget 与 F1 current class 已关闭；M1 Stage-3 external values and L1 are recorded, while exact capacitor qualification、thermal、startup 与 TVS/fuse interaction remain later validation items。
 - Required official layout sources：STM32、CH340C、ISO7721DR、LMR36510、STPS2H100A、SMBJ30A、USBLC6-2SC6、2N7002 及 CM35/Sensor external-interface data。
 
 ## Open Decision References

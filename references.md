@@ -17,10 +17,11 @@ Legacy schematic 与 BOM 不自动成为本项目 EDA authority。用户已明�
 
 ## Official Technical Sources
 
-| Item / Module | Official source | Key facts used in Stage 2 | Review Status |
+| Item / Module | Official source | Key facts used | Review Status |
 | --- | --- | --- | --- |
-| STM32F103C8T6 | STMicroelectronics STM32F103C8 product / datasheet / reference manual | 2.0–3.6 V device family、72 MHz、LQFP-48 option、GPIO/USART/SWD resource class | Stage 2 core selection reviewed; Stage 3 minimum-system details pending |
-| LMR36510FADDAR | [Texas Instruments LMR36510 product / datasheet](https://www.ti.com/product/LMR36510) | 4.2–65 V input、1 A synchronous buck、400 kHz FPWM orderable option、high-voltage transient protection features | Reviewed for Primary selection; 0.25 A output envelope PASS；external-component calculation pending |
+| STM32F103C8T6 | STMicroelectronics STM32F103C8 product / datasheet / reference manual | 2.0–3.6 V device family、72 MHz、LQFP-48 option、minimum-system and GPIO/USART/SWD resources | Stage 2 core selection reviewed；M2 Stage-3 implementation decisions recorded, current-session closeout acceptable |
+| LMR36510FADDAR | [Texas Instruments LMR36510 product / datasheet](https://www.ti.com/product/LMR36510) | 4.2–65 V input、1 A synchronous buck、400 kHz FPWM orderable option、application and external-component guidance | Reviewed for Primary selection；M1 Stage-3 external implementation recorded, remaining validation bounded |
+| SWPA6045S220MT | [Sunlord SWPA Series official datasheet](https://www.sunlordinc.com/uploads/files/20221122/SWPA%20series%20of%20SMD%20Power%20Inductor.pdf) | 22 µH ±20%；DCR 116 mΩ max / 89 mΩ typ；Isat 2.05 A min / 2.20 A typ；Irms 1.80 A max / 2.00 A typ；SWPA6045 = 6 × 6 × 4.5 mm shielded construction | Manufacturer technical source reviewed for M1 L1 decision；end-application thermal/current verification remains |
 | LMR36520FADDAR | [Texas Instruments LMR36520 product / datasheet](https://www.ti.com/product/LMR36520) | 4.2–65 V、2 A、400 kHz FPWM、DDA-8；TI states pin compatibility with LMR36510 | Qualified electrical scaling Alternate；purchase-time sourcing recheck required |
 | STPS2H100A | STMicroelectronics STPS2H100 product / datasheet | 100 V / 2 A Schottky rectifier、SMA package | Reviewed for series reverse-polarity Primary |
 | SMBJ30A-TR | STMicroelectronics SMBJxxA/CA datasheet | 30 V stand-off；600 W class 10/1000 µs TVS；clamp behavior depends on surge waveform/current | Reviewed for Primary selection; system surge margin calculation pending |
@@ -51,6 +52,7 @@ Point-in-time supplier observations must be rechecked before purchasing / PCBA s
 | 24 V TVS | ST SMBJ30A-TR | C133663 | Good / in stock during check | Surge compliance cannot be inferred from supplier listing |
 | Input fuse | Littelfuse 0468.500NRHF | C206993 | Listing re-confirmed during 2026-08-30 closeout | Supplier listing confirms MPN/package only；technical qualification uses Littelfuse datasheet |
 | PPTC Alternate | Littelfuse 1210L035/60PR | C28661880 | Listing found during 2026-08-30 closeout；availability not frozen | Temperature-dependent hold behavior limits application |
+| Buck output inductor | Sunlord SWPA6045S220MT | C83454 | Listing confirmed for the user-frozen L1 selection | Procurement/package evidence only；electrical qualification uses Sunlord official SWPA datasheet |
 
 ## Evidence Interpretation Notes
 
@@ -64,9 +66,9 @@ Point-in-time supplier observations must be rechecked before purchasing / PCBA s
 
 | Topic | Required Source | Decision Blocked | Priority | Evidence State |
 | --- | --- | --- | --- | --- |
-| STM32 minimum-system details | ST datasheet/reference manual/application notes | Stage 3 clock/reset/boot/SWD/VDDA implementation | High; needed by Stage 3 | Core MCU selection done; implementation review open |
+| STM32 minimum-system details | ST datasheet/reference manual/application notes | Later formal schematic review and EDA implementation verification | High; needed by Stage 4 | M2 decisions recorded and current-session closeout acceptable；no `.SchDoc` parsing or ERC claim |
 | CM35 exact I/O electrical parameters | CM35 official manual/datasheet pages containing threshold/current/VOL/leakage | Exact resistor、RC、ESD/transient/current-limiting and domain implementation | High; needed by Stage 3 and formal review | Topology closed；exact parameters open |
 | AN-LS18-40-N manufacturer provenance | Manufacturer official datasheet or confirmed provenance of archived manual | Final sensor input protection/current/filter design | High; needed by Stage 3 | Manual content reviewed; authority open |
 | External PSU official tolerance/surge data | Manufacturer official datasheet if obtainable | Required only for tighter PSU-specific or compliance-level surge claims | Medium | User nominal image + ≈24 V measurement available; official spec absent |
 | Mechanical envelope | Enclosure, board size, mounting and wiring constraints | Final USB/terminal mechanical selection and PCB outline | High; freeze before Stage 5 | Open |
-| Detailed board power design | Stage 3 circuit design and final component currents | Exact startup waveform、fuse time-current check、diode loss、buck ripple/magnetics/thermal | High; needed before schematic closeout | Stage-2 bounding budget and current classes closed；detailed design open |
+| Detailed board power validation | Exact capacitor MPN/DC-bias data、startup/inrush evidence、thermal and layout evidence | F1 startup coordination、capacitor qualification、thermal and switch-current-loop verification | High; needed before the applicable later gates | M1 connections and L1 decision recorded；current-session module closeout acceptable；validation evidence remains open |
