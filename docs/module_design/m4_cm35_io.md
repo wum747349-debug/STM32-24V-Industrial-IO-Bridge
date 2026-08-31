@@ -68,7 +68,7 @@ Firmware remains responsible for translating the physical Active-Low GPIO state 
 
 - CM35 IN connector: Cixi Kefa Elec `KF2EDGR-3.81-8P` PCB header, LCSC/JLCPCB `C441188`, pins ordered IN11 through IN18.
 - CM35 OUT connector: the same `KF2EDGR-3.81-8P` PCB header, pins ordered OUT1 through OUT8.
-- Both headers use the matching removable 3.81 mm plug family. The exact removable-plug MPN remains a procurement/mechanical confirmation item.
+- Matching removable plug baseline: Cixi Kefa Elec `KF2EDGK-3.81-8P`, LCSC `C440864`, 8-position / 3.81 mm plug. Final mate fit、board-edge access、wiring clearance and enclosure acceptance remain Stage-5 mechanical checks.
 - Exact reference designators remain governed by the current `.SchDoc`; this record does not infer them from screenshots or naming convention.
 
 ## Evidence and Remaining Validation

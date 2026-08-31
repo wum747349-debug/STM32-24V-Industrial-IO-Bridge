@@ -105,7 +105,7 @@ At 24 V and a deliberately conservative 75% buck-efficiency assumption, 250 mA a
 
 只有真实 Project decision 已形成依据时，才记录 board-level pin/function constraints、项目网络名或跨模块 mapping；module-specific pin-by-pin implementation 由启用后的 module design record 维护。
 
-| Function | Required Direction / Behavior | Candidate Mapping | Basis |
+| Function | Required Direction / Behavior | Frozen Mapping | Basis |
 | --- | --- | --- | --- |
 | CM35 IN11–IN18 control | 8 outputs; LOW=Active, HIGH=Inactive | PB0 / PB1 / PB5 / PB6 / PB7 / PA8 / PA11 / PA12 | M4 external network must enforce safe inactive startup |
 | CM35 OUT1–OUT8 status | 8 inputs; LOW=Active, HIGH=Inactive | PA0–PA7 | Preserves one-to-one EXTI0–EXTI7 allocation |
@@ -118,7 +118,7 @@ PA0–PA7 and PB8–PB15 intentionally avoid EXTI line-number conflicts across a
 
 ## PCB Inputs
 
-- Mechanical constraints：terminal 倾向约 5.0/5.08 mm、可插拔螺钉端子可评估；PCB size、enclosure、安装孔和连接器最终系列待确认。
+- Mechanical constraints：M4 CM35 使用 3.81 mm 8P pluggable terminal，M5 Sensor 使用 3.81 mm 4P pluggable terminal；final mating、board-edge access、enclosure 与 mechanical acceptance 仍后置到 Stage 5 Layout Preflight。
 - Sensitive or high-risk areas：24 V input protection、long-line CM35/Sensor I/O、USB/machine isolation boundary、clock/VDDA、reset/boot、安全默认状态。
 - Power and thermal constraints：Stage-2 bounding load budget 与 F1 current class 已关闭；M1 Stage-3 external values and L1 are recorded, while exact capacitor qualification、thermal、startup 与 TVS/fuse interaction remain later validation items。
 - M3 layout boundary：USBLC6 靠近 USB-C，USB ESD return 保持短；CH340C 与 ISO7721 decoupling 靠近对应 pin；不得用 copper/pour/via/test point 跨接 `USB_GND` 与 `GND`；isolator barrier 区域保持所需 creepage/clearance。
@@ -126,4 +126,4 @@ PA0–PA7 and PB8–PB15 intentionally avoid EXTI line-number conflicts across a
 
 ## Open Decision References
 
-Open Question 与 decision status 只在 `requirements.md` 的 `OPEN-xxx` 表维护。本文件仅记录架构影响，不建立第二套状态：OPEN-005/006 已在 Stage 2 形成 architecture decision；OPEN-003/004/007/008/009/010 仍按 `requirements.md` 维护。
+Open Question 与 decision status 只在 `requirements.md` 的 `OPEN-xxx` 表维护。本文件仅记录架构影响，不建立第二套状态：OPEN-005/006 已在 Stage 2 形成 architecture decision；OPEN-007/008 已在 Stage 3 关闭；OPEN-003/004/009/010 仍按 `requirements.md` 维护。

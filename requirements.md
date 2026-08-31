@@ -117,7 +117,7 @@
 - MCU 与主要器件尽量直接 SMT，减少人工焊接；connector 的 SMT / THT 取决于后续装配和机械 qualification。
 - 器件应尽量具备嘉立创可采购/可贴装性，但具体库存、料号与替代方案属于 Stage 2。
 - CM35 IN11–IN18、OUT1–OUT8 使用便于现场接线的 terminal block；4 个 Sensor 各使用独立 4-wire terminal；24 V 输入使用独立 terminal。
-- 当前倾向约 5.0 / 5.08 mm pitch，可评估 pluggable screw terminal；具体 pitch、系列与 MPN 尚未冻结。
+- CM35 / Sensor connector electrical family and pitch 已基本确定为 3.81 mm pluggable terminal；matching plug、board-edge access、enclosure 与 final mechanical acceptance 仍待 Stage 5 Layout Preflight。
 - PCB layer count、板厚、铜厚、尺寸、安装孔、enclosure 与 mounting constraints 均待确认。
 
 ## Acceptance Criteria
@@ -146,10 +146,10 @@
 | OPEN-001 | USB-UART 是否进行 galvanic isolation？ | 决定 ground loop、噪声、故障传播、电源域和 BOM | Resolved in Stage 1 | 用户确认 | 采用 board-mounted USB-UART + galvanically isolated UART interface；Stage 2 Primary 为 CH340C + ISO7721DR，Stage 3 继续核对 power-state/back-power behavior | Closed |
 | OPEN-002 | 每个传感器读取 NO only 还是 NO + NC？ | 决定 MCU 输入数量、前端通道数、端口资源与诊断能力 | Resolved in Stage 1 | 用户确认 | 每个传感器 NO + NC 均采集，4 × 2 = 8 路 MCU sensor digital inputs；exact frontend 留待 Stage 3 | Closed |
 | OPEN-003 | USB connector 具体机械型号是否接受？ | 影响机械可靠性、装配、外壳和线缆；不改变已选 USB2.0 architecture | Before Stage 5 Layout Preflight | 用户 / Mechanical | Stage 2 conditional candidate 为 TYPE-C-31-M-12；按 enclosure / 板边 / 插拔约束完成 mechanical acceptance | Open |
-| OPEN-004 | CM35 / Sensor / Power terminal 最终 pitch 和系列？ | 影响板尺寸、现场接线、装配方式与成本；不阻断当前 interface class | Before Stage 5 Layout Preflight | 用户 / Mechanical / JLCPCB capability | 比较约 5.0/5.08 mm 候选、pluggable 需求与 PCBA 可行性 | Open |
+| OPEN-004 | CM35 / Sensor / Power terminal 最终 pitch 和系列？ | 影响板尺寸、现场接线、装配方式与成本；不阻断当前 interface class | Before Stage 5 Layout Preflight | 用户 / Mechanical / JLCPCB capability | CM35 / Sensor electrical family and pitch 已基本确定为 3.81 mm pluggable terminal；继续确认 matching plug、board-edge access、enclosure 与 final mechanical acceptance | Open |
 | OPEN-005 | 24 V input protection architecture？ | 影响反接、surge/transient 能力、压降、热与安全 | Resolved in Stage 2 | 用户 measurement + Stage 2 qualification | 采用 0468.500NRHF 0.5 A Slo-Blo fuse + STPS2H100A + SMBJ30A-TR + protected 24V bus；exact startup/time-current、surge waveform/source impedance 与 thermal margin 留待 Stage 3 | Closed |
 | OPEN-006 | 24 V → 3.3 V power architecture？ | 影响效率、热、噪声、布局、成本与可采购性 | Resolved in Stage 2 | Stage 2 qualification | Primary 采用 LMR36510FADDAR 65 V / 1 A class synchronous buck；Stage-2 0.25 A output envelope PASS，exact inductor/FB/capacitors/ripple/thermal 留待 Stage 3 | Closed |
-| OPEN-007 | exact GPIO / USART pin allocation？ | 影响通道数量、boot/debug、安全状态与 PCB routing | Stage 3 | Stage 3 design | 按已确认的 8 路 sensor inputs 与隔离 UART 架构进行资源分配、启动状态和冲突检查 | Open |
+| OPEN-007 | exact GPIO / USART pin allocation？ | 影响通道数量、boot/debug、安全状态与 PCB routing | Resolved in Stage 3 | M2 module design + M3/M4/M5 integration | GPIO / USART mapping 已在 M2 冻结，并已被 M3 isolated UART、M4 CM35 I/O 与 M5 Sensor Interface 使用 | Closed |
 | OPEN-008 | exact CM35 / Sensor external-interface values and protection network？ | 影响阈值、保护、功耗与抗扰度；Stage-2 topology 已确定 | Resolved in Stage 3 | Stage 3 module design + current-session screenshot evidence + Littelfuse official data | M4 16-channel baseline 与 common-reference domain 已关闭；M5 per-channel 2N7002 / 100 Ω / SMF30A / no-RC baseline 已定义，module capture completeness 仍由 M5 文档跟踪 | Closed |
 | OPEN-009 | enclosure / PCB size / mounting constraints？ | 影响 connector 布局、板框、安装孔、散热和可维护性 | Before Stage 5 Layout Preflight | 用户 / Mechanical | 收集可用空间、安装方式、禁布区、固定点及接线方向并确认 | Open |
 | OPEN-010 | 是否需要 indicator LEDs / additional diagnostic interface？ | 影响 GPIO、电源预算、面板可见性和调试效率；属于 ordinary peripheral scope | Stage 3 module planning | 用户 / Serviceability | 定义必须显示的 power/communication/I/O/fault 状态和可见性需求；未决定不阻断 Stage 2 | Open |

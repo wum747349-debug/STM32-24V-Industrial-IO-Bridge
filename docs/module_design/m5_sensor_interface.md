@@ -49,9 +49,9 @@ FIELD signal -> SMF30A cathode
 GND          -> SMF30A anode
 ```
 
-The TVS belongs on the connector side of the 100 Ω resistor and physically close to the field connector, with a short return to `GND`. Sensor Active pulls the field signal low and produces MCU GPIO LOW; inactive produces MCU GPIO HIGH. Firmware converts this Active-Low physical state to positive application semantics.
+The TVS belongs on the connector side of the 100 Ω resistor and physically close to the field connector, with a short return to `GND`. NPN output asserted / sinking produces MCU GPIO LOW; output released produces MCU GPIO HIGH. Firmware converts this Active-Low physical state to positive application semantics.
 
-NO and NC are acquired together to support complementary-state diagnostics. Firmware may use disagreement from the expected complementary relationship to detect wiring, sensor, or stuck-signal anomalies; no diagnostic coverage or functional-safety claim is made at this stage.
+NO and NC are acquired together to support complementary-state diagnostics. Firmware may use disagreement from the expected complementary relationship to detect wiring, sensor, or stuck-signal anomalies, but must allow for brief non-complementary states during switching and must not declare a fault immediately from a transient mismatch. No diagnostic coverage or functional-safety claim is made at this stage.
 
 ## Protection and Filtering Decision
 
