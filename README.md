@@ -1,7 +1,7 @@
 # STM32 24V Industrial I/O Bridge
 
 Project Identity: wum747349-debug/STM32-24V-Industrial-IO-Bridge
-Current Project Stage: Stage 4 — Schematic Review
+Current Project Stage: Stage 5 — PCB Layout
 Hardware Revision: TBD
 
 ## 项目目的（Purpose）
@@ -19,8 +19,9 @@ Hardware Revision: TBD
 - 24 V source 当前有用户提供的 `MS-120-24` 24 V / 5 A / 120 W 图片证据，且用户已用万用表确认实际输出约 24 V、观察较稳定；该 evidence 不替代官方 tolerance / surge specification。
 - Stage 2 已建立 `0.225 A` 的 24 V continuous design envelope，并将 Littelfuse `0468.500NRHF` 0.5 A / 63 V Slo-Blo fuse 选为 F1 Primary；60 V PPTC 仅作为有温度限制的 Alternate architecture。
 - CM35 Stage-2 topology qualification 已关闭；Rev.A 使用两套隔离输出的 24 V switching PSU：PSU A 仅供 CM35 system `24V/0V`，PSU B 直接分配至 CM35 I/O `V/G` 与 PCB `24V/GND`。PCB `GND = CM35 G / 24G = PSU B -V`，且不得直接连接 CM35 system `0V`、PSU A `-V`、PE 或 chassis。M4 的 16-channel 2N7002 network 与 safe-startup contract 保持不变。
-- 当前本地同日导出的完整 schematic PDF 与 BOM 支持 Stage 3 closeout；Hardware Revision 仍为 `TBD`。当前文档不声称 `.SchDoc` 已被解析、ERC、footprint verification、Stage 4 PASS、PCB Layout approval、DRC、Manufacturing、Bring-up 或 Test 已完成。
-- Stage 4 已记录 M1 reverse-polarity finding 的修改处置：当前截图支持 `24V_IN_RAW` / `GND_IN_RAW`、Q25/R65/R66/D12 与 `24V_PROTECTED` 的可见纠正拓扑；Q25 symbol-to-footprint pad mapping 仍待独立 EDA 核对，结论为 `MODIFIED / PENDING FINAL EDA VERIFICATION`。
+- Stage 4 Formal Schematic Review 已 **PASS / CLOSED**，最终结论为“可以进入 PCB Layout”；PCB Layout entry 已批准，Project 转入 Stage 5 — Layout Preflight / PCB Layout preparation。
+- 最新完整 schematic PDF 与 BOM 已归档到 `hardware/outputs/`，作为当前 Stage 4 formal-review evidence；Hardware Revision 仍为 `TBD`。本结论不声称 `.SchDoc` parser、ERC、全板 footprint verification、hardware test、EMC/surge、DRC、Manufacturing 或 Bring-up PASS。
+- 用户已在 Altium 中完成 Q25 schematic symbol D/G/S、PowerDI3333-8 footprint pads 与 manufacturer pinout 的最终核对，SR-M1-001 已关闭；`GND_IN_RAW` 仍不得绕过 Q25 直接连接 PCB `GND`。
 
 ## 项目事实入口（Project Facts）
 
@@ -40,4 +41,4 @@ Hardware Revision: TBD
 
 ## 下一步（Next Step）
 
-继续 Stage 4 Formal Schematic Review，并对 [docs/schematic_review.md](docs/schematic_review.md) 中 SR-M1-001 执行窄范围最终 EDA 核对：确认 Q25 schematic symbol 的 Drain/Gate/Source pin numbers 与所选 footprint pads 一致。当前尚无 ERC PASS、footprint mapping PASS、Stage 4 PASS 或 PCB Layout approval。
+执行 Stage 5 layout preflight：建立/核对 PCB rules、机械边界、连接器与板边可达性，并准备关键器件 placement 与 PCB Layout。Stage 4 closeout 不等同于 ERC、DRC、hardware test 或 EMC/surge compliance PASS。

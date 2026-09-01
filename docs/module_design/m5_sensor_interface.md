@@ -5,11 +5,11 @@
 - Responsibility: power 4 × AN-LS18-40-N sensors and acquire each sensor's NPN NO and NC outputs, for 8 MCU inputs total.
 - Per-channel frontend baseline: **CAPTURED / REVIEWED ACROSS ALL 8 CHANNELS**.
 - EDA capture status: **CLOSEOUT ACCEPTABLE**. Sensor 1–4 NO / NC have all been captured and passed the current-session screenshot-level completeness review.
-- This conclusion is limited to the visible implementation evidence. It does not claim `.SchDoc` object parsing, reference-designator or footprint verification, ERC PASS, Stage 4 PASS, PCB Layout approval, EMC/surge compliance, or hardware-test results.
+- Stage 4 Formal Schematic Review is **PASS / CLOSED** and PCB Layout entry is approved. This conclusion does not claim `.SchDoc` object parsing, broader full-board footprint verification, ERC PASS, EMC/surge compliance, or hardware-test PASS.
 
 ## Sensor Connectors and GPIO Mapping
 
-Each sensor uses one Cixi Kefa Elec `KF2EDGR-3.81-4P` PCB header, LCSC/JLCPCB `C441184`, with identical field wiring:
+Sensors 1–4 use connectors `CN1`–`CN4`, respectively. Each is one Cixi Kefa Elec `KF2EDGR-3.81-4P` PCB header, LCSC/JLCPCB `C441184`, with identical field wiring:
 
 | Pin | PCB net / function | Sensor wire |
 | --- | --- | --- |
@@ -18,7 +18,7 @@ Each sensor uses one Cixi Kefa Elec `KF2EDGR-3.81-4P` PCB header, LCSC/JLCPCB `C
 | 3 | NO field signal | Black |
 | 4 | NC field signal | White |
 
-The matching removable 3.81 mm plug is required; its exact MPN remains a procurement/mechanical confirmation item. Exact connector reference designators remain governed by the current `.SchDoc`.
+The matching removable 3.81 mm plug is required; its exact MPN remains a procurement/mechanical confirmation item. Current sensor connector reference designators are `CN1`–`CN4`.
 
 | Sensor signal | STM32 GPIO |
 | --- | --- |
@@ -33,7 +33,7 @@ The matching removable 3.81 mm plug is required; its exact MPN remains a procure
 
 ## Per-channel Frontend Baseline
 
-Each NO or NC field signal uses one Nexperia `2N7002,215` and the following topology:
+Each NO or NC field signal retains the current 2N7002 device, LCSC `C7420321`; Nexperia `2N7002,215` remains qualification history/reference rather than a mandatory/current Primary replacement. Each channel uses the following topology:
 
 ```text
 FIELD signal -> 100 ohm -> 24 V-side node -> 2N7002 Drain

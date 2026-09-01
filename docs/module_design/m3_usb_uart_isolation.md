@@ -3,8 +3,8 @@
 ## Module Status and Boundary
 
 - Responsibility: provide the PC USB device interface, USB data-line ESD protection, USB-to-UART conversion, and galvanically isolated bidirectional UART connection to STM32 USART1.
-- Current Stage-3 conclusion: **CLOSEOUT ACCEPTABLE** for module design and current-session EDA capture reviewed from the user-provided Altium schematic screenshot.
-- This record does not claim `.SchDoc` parsing, footprint verification, ERC PASS, USB enumeration test, measured isolation performance, EMC/ESD compliance, Stage 3 completion, Stage 4 PASS, or PCB Layout approval.
+- Stage 3 module conclusion remains **CLOSEOUT ACCEPTABLE**; Stage 4 Formal Schematic Review is **PASS / CLOSED** and PCB Layout entry is approved.
+- This record does not claim `.SchDoc` parsing, broader full-board footprint verification, ERC PASS, USB enumeration test, measured isolation performance, hardware-test PASS, or EMC/ESD compliance.
 
 ## Power Domains and Structured Connection Facts
 
@@ -19,8 +19,8 @@ Hard boundary: USB_GND != GND
 ```text
 A1/B12 + B1/A12 GND -> USB_GND
 A4/B9 + B4/A9 VBUS -> USB_VBUS
-A5 CC1 -> R39 5.1 kohm / 1% -> USB_GND
-B5 CC2 -> R40 5.1 kohm / 1% -> USB_GND
+A5 CC1 -> R53 5.1 kohm / 1% -> USB_GND
+B5 CC2 -> R57 5.1 kohm / 1% -> USB_GND
 A6 DP1 + B6 DP2 -> USB_DP_RAW
 A7 DN1 + B7 DN2 -> USB_DM_RAW
 A8 SBU1 -> NC

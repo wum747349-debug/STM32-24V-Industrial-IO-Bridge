@@ -3,24 +3,24 @@
 ## Module Status and Boundary
 
 - Responsibility: accept machine 24 V, provide overcurrent and reverse-polarity protection, establish `24V_PROTECTED`, suppress transients, and generate the machine-side `3V3` rail.
-- Current Stage-4 M1 review disposition: reverse-polarity correction **MODIFIED / PENDING FINAL EDA VERIFICATION**; the current-session schematic screenshot visually supports the topology, while Q25 symbol-to-footprint pad mapping remains pending.
-- This record does not claim `.SchDoc` parsing, pin/footprint verification, ERC PASS, measured startup, surge compliance, Stage 3 completion, Stage 4 PASS, or PCB Layout approval.
+- Current Stage-4 M1 review disposition: **CLOSED**. The user completed the final Q25 schematic-symbol D/G/S ↔ PowerDI3333-8 footprint-pad ↔ manufacturer-pinout check in Altium; SR-M1-001 is closed.
+- Stage 4 Formal Schematic Review is **PASS / CLOSED** and PCB Layout entry is approved. This record does not claim `.SchDoc` parsing, broader full-board pin/footprint verification, ERC PASS, measured startup, hardware-test PASS, or surge/EMC compliance.
 
 ## Structured Connection Facts
 
 ```text
 P1 WJ500V-5.08-2P positive input -> 24V_IN_RAW
 P1 WJ500V-5.08-2P negative input -> GND_IN_RAW
-24V_IN_RAW -> F1 0468.500NRHF -> D1 STPS2H100A anode
-D1 cathode -> 24V_PROTECTED
+24V_IN_RAW -> F1 0468.500NRHF -> D9 STPS2H100A anode
+D9 cathode -> 24V_PROTECTED
 Q25 DMT10H015LFG-13 Drain -> GND_IN_RAW
 Q25 Source -> PCB GND
 R65 10 kohm: 24V_IN_RAW -> Q25 Gate
 R66 100 kohm: Q25 Gate -> Q25 Source / PCB GND
 D12 MMSZ5242B-7-F cathode -> Q25 Gate
 D12 anode -> Q25 Source / PCB GND
-D2 SMBJ30A-TR cathode -> 24V_PROTECTED
-D2 anode -> GND
+D10 SMBJ30A-TR cathode -> 24V_PROTECTED
+D10 anode -> GND
 
 U2 LMR36510FADDAR PGND / EP -> GND
 U2 VIN / EN -> 24V_PROTECTED
@@ -30,7 +30,7 @@ C12 220 nF / 100 V / X7R: 24V_PROTECTED <-> GND
 C13 1 uF / X7R / >=16 V: U2 VCC <-> GND
 U2 BOOT capacitor -> SW_NODE
 U2 SW -> SW_NODE -> L1 SWPA6045S220MT -> 3V3
-3V3 -> R37 100 kohm / 1% -> U2 FB -> R38 43.2 kohm / 1% -> GND
+3V3 -> R37 100 kohm / 1% -> U2 FB -> R42 43.2 kohm / 1% -> GND
 C14 / C15 / C16, each Samsung CL31B226KPHNNNE / LCSC C87996 / 22 uF / 10 V / X7R / 1206: 3V3 <-> GND
 ```
 
@@ -55,6 +55,6 @@ P1 is the current capture choice, not final enclosure/mechanical approval. No ad
 
 - Full-board startup/inrush and F1 time-current coordination are unmeasured.
 - C14/C15/C16 effective capacitance under DC bias, diode/MOSFET loss, ripple, and thermal behavior remain to be checked as applicable.
-- Independently verify Q25 schematic-symbol Drain/Gate/Source pin numbering against the selected footprint pad mapping before final Stage 4 closure; the screenshot does not prove this mapping.
+- Preserve the user-verified Q25 D/G/S ↔ PowerDI3333-8 pad ↔ manufacturer-pinout mapping during PCB implementation; `GND_IN_RAW` must not bypass Q25 into PCB `GND`.
 - PCB placement/routing has not started; switch-current-loop layout is not verified.
 - No source-impedance, surge-waveform, IEC, or other compliance result is claimed.

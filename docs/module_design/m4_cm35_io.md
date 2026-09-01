@@ -3,8 +3,8 @@
 ## Module Status and Boundary
 
 - Responsibility: provide 8 STM32 → CM35 IN11–IN18 control channels and 8 CM35 OUT1–OUT8 → STM32 status channels.
-- Current Stage-3 conclusion: **CLOSEOUT ACCEPTABLE** for module design and current-session EDA capture reviewed from user-provided Altium schematic screenshots.
-- The Project remains in Stage 3. This record does not claim `.SchDoc` object parsing, footprint verification, ERC PASS, Stage 4 PASS, PCB Layout approval, or hardware-test results.
+- Stage 3 module conclusion remains **CLOSEOUT ACCEPTABLE**; Stage 4 Formal Schematic Review is **PASS / CLOSED** and PCB Layout entry is approved.
+- This record does not claim `.SchDoc` object parsing, broader full-board footprint verification, ERC PASS, hardware-test PASS, or EMC/surge compliance.
 
 ## Power-domain Decision
 
@@ -18,8 +18,8 @@ CM35 system domain
 Isolated I/O domain
   PSU B +24 V -> CM35 V
   PSU B -V    -> CM35 G / 24G
-  PSU B +24 V -> PCB 24V input
-  PSU B -V    -> PCB GND
+  PSU B +24 V -> P1 -> 24V_IN_RAW -> protection -> 24V_PROTECTED
+  PSU B -V    -> P1 -> GND_IN_RAW -> Q25 -> PCB GND
 ```
 
 Therefore `PCB GND = CM35 G / 24G = PSU B -V`. This node **MUST NOT** be directly connected to CM35 system `0V`, PSU A `-V`, PE, or chassis; `PSU A -V != PSU B -V`. The exact PSU-B model, manufacturer, and current rating remain a later procurement/system-integration decision.
@@ -30,7 +30,7 @@ The existing 16-channel 2N7002 circuit, GPIO mapping, Active-Low behavior, and s
 
 ## Repeated Channel Topology
 
-All 16 channels use Nexperia `2N7002,215`. Each channel follows the same level-translation structure:
+All 16 channels retain the current 2N7002 device, LCSC `C7420321`. Nexperia `2N7002,215` remains qualification history/reference and is not the current mandatory Primary replacement. Each channel follows the same level-translation structure:
 
 ```text
 3V3 -> 10 kohm -> MCU-side node -> 2N7002 Source
@@ -82,10 +82,10 @@ Firmware remains responsible for translating the physical Active-Low GPIO state 
 
 ## Field Connectors
 
-- CM35 IN connector: Cixi Kefa Elec `KF2EDGR-3.81-8P` PCB header, LCSC/JLCPCB `C441188`, pins ordered IN11 through IN18.
-- CM35 OUT connector: the same `KF2EDGR-3.81-8P` PCB header, pins ordered OUT1 through OUT8.
+- CM35 IN connector `CN5`: Cixi Kefa Elec `KF2EDGR-3.81-8P` PCB header, LCSC/JLCPCB `C441188`, pins ordered IN11 through IN18.
+- CM35 OUT connector `CN6`: the same `KF2EDGR-3.81-8P` PCB header, pins ordered OUT1 through OUT8.
 - Matching removable plug baseline: Cixi Kefa Elec `KF2EDGK-3.81-8P`, LCSC `C440864`, 8-position / 3.81 mm plug. Final mate fit、board-edge access、wiring clearance and enclosure acceptance remain Stage-5 mechanical checks.
-- Exact reference designators remain governed by the current `.SchDoc`; this record does not infer them from screenshots or naming convention.
+- Current CM35 connector reference designators are `CN5` / `CN6`; other exact reference designators remain governed by the current `.SchDoc`.
 
 ## Evidence and Remaining Validation
 

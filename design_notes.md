@@ -26,7 +26,7 @@
 | Sensor acquisition | 每个传感器独立 `+24V/0V/NO/NC` 端子并采集 NO+NC，共 8 路 inputs | 用户确认；OPEN-002 |
 | M5 frontend status | 8-channel capture `CLOSEOUT ACCEPTABLE` | 全 8 路 current-session screenshot-level completeness review + Littelfuse official SMF30A data |
 | USB-UART / isolation | USB side `USB_VBUS/USB_GND` ↔ ISO7721DR ↔ STM32 USART1 on machine-side `3V3/GND`; M3 current-session closeout acceptable | Stage 2 selection + Stage 3 manufacturer-data review + user-provided Altium screenshot |
-| 24 V input protection | Positive path `24V_IN_RAW -> F1 -> STPS2H100A -> 24V_PROTECTED` plus Q25 `DMT10H015LFG-13` low-side return protection from `GND_IN_RAW` to PCB `GND`, with R65/R66 bias and D12 gate-source clamp | Stage-4 M1 finding modified in current-session screenshot；Q25 symbol-to-footprint pad mapping remains pending EDA verification |
+| 24 V input protection | Positive path `24V_IN_RAW -> F1 -> D9 STPS2H100A -> 24V_PROTECTED` plus Q25 `DMT10H015LFG-13` low-side return protection from `GND_IN_RAW` to PCB `GND`, with R65/R66 bias and D12 gate-source clamp | Stage 4 PASS / CLOSED；用户已在 Altium 中完成 Q25 symbol D/G/S ↔ PowerDI3333-8 pads ↔ manufacturer pinout 最终核对 |
 | 24 V -> 3.3 V | LMR36510FADDAR synchronous buck | Stage 2 official-source qualification；OPEN-006 |
 
 M1 当前 schematic architecture 已细化并达到 current-session module closeout acceptable；exact connections、values、L1 decision 与 validation boundary 由 `docs/module_design/m1_power.md` 持有。M3 的 exact USB/UART connections、power-state/default behavior、shield termination 与 module-specific layout details 由 `docs/module_design/m3_usb_uart_isolation.md` 持有。M4/M5 的 channel-level mapping、values、connector pin order 与 evidence boundary 分别由 `docs/module_design/m4_cm35_io.md` 和 `docs/module_design/m5_sensor_interface.md` 持有。
@@ -91,7 +91,7 @@ PSU B -V -> P1 negative -> GND_IN_RAW
 - LMR36510FADDAR is a 4.2–65 V, 1 A synchronous buck with high-voltage transient tolerance class suitable for this nominal 24 V architecture.
 - SMBJ30A-TR uses a 30 V stand-off level so it remains off at the measured ~24 V operating point while providing transient suppression below the converter absolute high-voltage boundary under the currently assumed source conditions.
 - The low-side Q25 correction covers the actual fault case in which CM35 signal wiring remains connected while both PCB 24 V input wires are reversed. `GND_IN_RAW` must not be merged with or routed around Q25 to PCB `GND`.
-- The current-session schematic screenshot visually supports this corrected topology. Q25 symbol Drain/Gate/Source numbering to footprint-pad mapping is not proven by the screenshot and remains a narrow Stage-4 EDA verification item.
+- The current-session schematic evidence supports this corrected topology. The user completed the final Q25 schematic-symbol D/G/S to PowerDI3333-8 pad and manufacturer-pinout check in Altium; SR-M1-001 is closed.
 - C14/C15/C16 are Samsung `CL31B226KPHNNNE`, LCSC `C87996`, 22 uF, 10 V, X7R, 1206 buck output capacitors; obsolete X5R wording no longer applies.
 - M1 current-session module design / EDA capture closeout is acceptable；exact values and remaining validation boundaries are maintained in `docs/module_design/m1_power.md`，not duplicated here.
 - Exact surge waveform/source impedance, startup/inrush coordination、capacitor DC-bias、thermal and layout verification remain open；no compliance claim is made.
@@ -121,7 +121,7 @@ The historical CM35 interface allocation in this Stage-2 envelope bounded PCB-si
 - Voltage / Logic Compatibility: M4 and M5 retain the reviewed 2N7002 Active-Low translation; USB/machine isolation remains unchanged.
 - Startup / Shutdown / Fault State: M4 safe-startup remains hardware-enforced; USB back-power and unverified transient/thermal behavior remain explicit later-review boundaries.
 - Cross-sheet Net Consistency: current-session visible evidence uses `24V_IN_RAW`, `GND_IN_RAW`, `24V_PROTECTED`, `3V3`, `GND`, `USB_GND`, and the recorded channel names consistently; this is screenshot/PDF evidence, not `.SchDoc` object parsing or footprint mapping verification.
-- Missing / Conflicting Responsibility: no Stage-3 module responsibility conflict remains. The complete same-date schematic PDF and BOM are available locally, so the Stage-3 conclusion is **READY FOR SCHEMATIC REVIEW**.
+- Missing / Conflicting Responsibility: no Stage-3 module responsibility conflict remains. The complete same-date schematic PDF and BOM are archived under `hardware/outputs/`; Stage 4 Formal Schematic Review is **PASS / CLOSED** and PCB Layout entry is approved.
 
 - LMR36510FADDAR：0.25 A output envelope versus 1 A rating → current-class margin PASS。
 - STPS2H100A：0.225 A input envelope versus 2 A rating → current-class margin PASS；exact forward-loss/thermal verification remains Stage 3。
