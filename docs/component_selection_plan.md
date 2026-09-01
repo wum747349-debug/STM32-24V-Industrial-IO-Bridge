@@ -35,7 +35,7 @@ Availability 为 2026-08-29 的 point-in-time procurement evidence；未取得�
 | M3 | UART galvanic isolation | C366164 | Texas Instruments | ISO7721DR | SOIC-8 | Unknown | 2 channels, 1 forward + 1 reverse；2.25–5.5 V each side；default output HIGH；适合 UART TX/RX domain isolation | Yes | Primary | USB side 与 machine side 分别由各自电源域供电；不因此声称 system-level isolation certification |
 | M3 | USB data ESD | C7519 | STMicroelectronics | USBLC6-2SC6 | SOT-23-6L | Unknown | 2-line USB 2.0 high-speed ESD protection；low line capacitance | Yes | Primary | Placement / routing / VBUS connection 留待 Stage 3/5 |
 | M3 | USB-C receptacle | C165948 | Korean Hroparts Elec | TYPE-C-31-M-12 | SMD, right-angle, 16P | Unknown | USB 2.0 device connection；JLC/LCSC sourcing convenient | Supplier data | Conditional | Electrical use acceptable for current concept；mechanical/enclosure qualification remains OPEN-003 |
-| M4/M5 | 24 V ↔ 3.3 V open-drain / pull-down conversion | C65189 | Nexperia | 2N7002,215 | SOT-23 | Unknown | 60 V N-MOSFET、logic-level drive、manufacturer lists logic-level translator use；matches verified legacy MOSFET approach | Yes | Primary | Legacy topology reuse authorized；exact per-channel interface/protection must be requalified with CM35/Sensor electrical data |
+| M4/M5 | 24 V ↔ 3.3 V open-drain / pull-down conversion | C7420321 | Current supplier listing | 2N7002 | SOT-23 | Retained | Same C-number used on the previous working board；accepted for the current low-current level-translation application | Legacy/application evidence；Nexperia reference retained | Primary / retained | Do not require replacement with Nexperia `2N7002,215` solely because earlier documentation named it Primary；normal purchase-time identity and footprint checks still apply |
 | M1 | 24 V → 3.3 V buck | C1858394 | Texas Instruments | LMR36510FADDAR | HSOIC/ESOP-8 | Good | 4.2–65 V input、1 A synchronous buck、400 kHz FPWM、70 V transient tolerance class、industrial-oriented protection features | Yes | Primary | Inductor、FB、input/output capacitors、thermal/load budget deferred to Stage 3 |
 | M1 | Reverse-polarity protection | C81548 | STMicroelectronics | STPS2H100A | SMA (DO-214AC) | Unknown | 100 V / 2 A Schottky series diode；simple fail-safe reverse-polarity blocking for low-current 24 V control board | Yes | Primary | Forward drop / dissipation to be checked against final current budget |
 | M1 | 24 V transient suppression | C133663 | STMicroelectronics | SMBJ30A-TR | SMB (DO-214AA) | Good | 30 V stand-off；600 W class 10/1000 µs TVS；selected above measured ~24 V steady source and below LMR36510 high-voltage boundary | Yes | Primary | ST table gives higher clamp under 8/20 µs high-current condition; Stage 3 must check source impedance, surge assumption and margin before claiming a compliance level |
@@ -106,7 +106,7 @@ USB-side power/ground and machine-side 3.3 V / 0 V remain separate across the di
 
 The archived previous-generation schematic was reviewed in Stage 2 and shows repeated 2N7002 MOSFET conversion networks. The earlier project wording that described the legacy CM35 readback as optocoupler-based was inconsistent with that schematic evidence and is corrected in `requirements.md`.
 
-The new board will use Nexperia `2N7002,215` as the Primary device for the reused MOSFET conversion approach. This is a topology reuse decision, not a declaration that every old resistor value or protection detail is automatically valid for the new board.
+The new board intentionally retains LCSC `C7420321` for the reused 2N7002 MOSFET conversion approach. The same C-number was used on the previous working board, and the present low-current level-translation application remains accepted. The earlier Nexperia `2N7002,215` qualification is preserved as useful technical history and a reference envelope, but it is not the mandatory/current Primary and does not by itself require replacement of C7420321. This remains a topology/application acceptance, not a declaration that every old resistor value or protection detail is automatically valid for the new board.
 
 CM35 topology qualification is **PASS** for Stage 2:
 
@@ -124,7 +124,7 @@ Sensor qualification is **CONDITIONAL** for Stage 2: the user-provided manual su
 | 24 V → 3.3 V | LMR36510FADDAR, 65 V / 1 A | LMR36520FADDAR, 65 V / 2 A | Qualified electrical scaling Alternate；TI identifies DDA-8 pin compatibility. Use only if Stage-3 load/thermal results require it and recheck sourcing. |
 | UART isolator | ISO7721DR | ISO6721BDR | Qualified cost-focused Alternate for 1-forward/1-reverse UART and default-HIGH behavior. ISO6721BDR is basic-isolation class；do not substitute if later requirements demand the ISO7721 reinforced-isolation capability. |
 | Input overcurrent | 0468.500NRHF one-time 0.5 A / 63 V Slo-Blo fuse | 1210L035/60PR 60 V PPTC architecture | Alternate is temperature-conditional：0.35 A hold at 20°C falls to 0.21 A at 70°C；resistance/heating、residual current and sustained-fault behavior prevent Primary status. |
-| 24 V / 3.3 V interface MOSFET | Nexperia 2N7002,215 | No qualified Alternate currently selected | Any purchase-time alternate must be manufacturer-qualified for ≥60 V VDS class、3.3 V low-current gate-drive use、required current、SOT-23 pin mapping/footprint and temperature. If Primary is unavailable, stop BOM substitution until one exact MPN passes this envelope. |
+| 24 V / 3.3 V interface MOSFET | LCSC C7420321 2N7002, intentionally retained | Nexperia 2N7002,215 qualification history / reference envelope | Do not replace C7420321 solely because the earlier record named Nexperia Primary. Any actual purchase-time substitution must preserve the required voltage/current class, 3.3 V low-current application suitability, SOT-23 pin/footprint mapping, and temperature envelope. |
 
 Purchase-time availability must be rechecked before ordering / PCBA submission；current stock observations are not permanent Project facts.
 
@@ -158,7 +158,7 @@ Any new evidence that changes the 24 V architecture、fault-energy boundary、is
 - F1 Primary + Alternate architecture：Qualified with explicit Stage-3 verification rules.
 - CM35 Stage-2 qualification：PASS.
 - Sensor Stage-2 qualification：CONDITIONAL；not a closeout blocker.
-- Primary / Alternate completeness：PASS with explicit no-qualified-Alternate rule for 2N7002.
+- Primary / Alternate completeness：PASS with C7420321 intentionally retained and the Nexperia qualification preserved as reference history rather than a mandatory replacement rule.
 - Stage 2 Closeout：**PASS**.
 
 ## Evidence Boundary

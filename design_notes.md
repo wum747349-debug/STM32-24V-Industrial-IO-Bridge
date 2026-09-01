@@ -20,13 +20,13 @@
 | 主控 | STM32F103C8T6 直接集成到 PCB；M2 current-session module closeout acceptable | 用户确认的项目目标；Stage 2 qualification + Stage 3 user/ChatGPT session review |
 | CM35 channel scope | CM35 提供 IN1–IN18 / OUT1–OUT8；本板使用 IN11–IN18 / OUT1–OUT8 | 用户确认的系统边界；IN15–IN18 已由用户针对实际设备确认 |
 | Protocol polarity | Application `1=Active`; physical GPIO Active-Low; firmware inversion | 已验证系统行为与用户提供的 interface contract |
-| CM35 / Sensor conversion | 复用 legacy 2N7002 MOSFET conversion approach；Primary device = Nexperia 2N7002,215 | 用户授权 + archived legacy schematic review + Nexperia official data |
+| CM35 / Sensor conversion | 复用 legacy 2N7002 MOSFET conversion approach；当前保留 LCSC `C7420321`，不要求仅因旧记录而更换为 Nexperia `2N7002,215` | 用户授权 + previous working board evidence + current low-current application acceptance；Nexperia qualification history retained as reference |
 | CM35 Rev.A power domain | PSU A -> CM35 system `24V/0V`；独立 PSU B -> CM35 I/O `V/G` + PCB `24V/GND`；`PCB GND = CM35 G / 24G`，且 `PSU A -V != PSU B -V`；不增加 per-channel isolation | CM35 official-manual evidence + 用户最终系统架构决策 |
 | M4 module status | 16-channel CM35 interface 与 safe-startup design / current-session capture `CLOSEOUT ACCEPTABLE` | Stage 3 user-provided Altium screenshots；不代表 ERC、footprint 或 Stage 4 结果 |
 | Sensor acquisition | 每个传感器独立 `+24V/0V/NO/NC` 端子并采集 NO+NC，共 8 路 inputs | 用户确认；OPEN-002 |
 | M5 frontend status | 8-channel capture `CLOSEOUT ACCEPTABLE` | 全 8 路 current-session screenshot-level completeness review + Littelfuse official SMF30A data |
 | USB-UART / isolation | USB side `USB_VBUS/USB_GND` ↔ ISO7721DR ↔ STM32 USART1 on machine-side `3V3/GND`; M3 current-session closeout acceptable | Stage 2 selection + Stage 3 manufacturer-data review + user-provided Altium screenshot |
-| 24 V input protection | 0468.500NRHF 0.5 A / 63 V Slo-Blo fuse + STPS2H100A series reverse-polarity protection + SMBJ30A-TR TVS -> protected 24V bus | Stage-2 0.225 A continuous design envelope + Littelfuse/ST official data；OPEN-005 |
+| 24 V input protection | Positive path `24V_IN_RAW -> F1 -> STPS2H100A -> 24V_PROTECTED` plus Q25 `DMT10H015LFG-13` low-side return protection from `GND_IN_RAW` to PCB `GND`, with R65/R66 bias and D12 gate-source clamp | Stage-4 M1 finding modified in current-session screenshot；Q25 symbol-to-footprint pad mapping remains pending EDA verification |
 | 24 V -> 3.3 V | LMR36510FADDAR synchronous buck | Stage 2 official-source qualification；OPEN-006 |
 
 M1 当前 schematic architecture 已细化并达到 current-session module closeout acceptable；exact connections、values、L1 decision 与 validation boundary 由 `docs/module_design/m1_power.md` 持有。M3 的 exact USB/UART connections、power-state/default behavior、shield termination 与 module-specific layout details 由 `docs/module_design/m3_usb_uart_isolation.md` 持有。M4/M5 的 channel-level mapping、values、connector pin order 与 evidence boundary 分别由 `docs/module_design/m4_cm35_io.md` 和 `docs/module_design/m5_sensor_interface.md` 持有。
@@ -52,10 +52,9 @@ CM35 System Domain
 Isolated I/O Domain
   PSU B +24 V -> CM35 V             (cabinet terminal distribution)
   PSU B -V    -> CM35 G / 24G       (cabinet terminal distribution)
-  PSU B +24 V -> PCB 24V input
-  PSU B -V    -> PCB GND
-                 -> PCB M1 -> F1 -> reverse-polarity protection
-                 -> 24V_PROTECTED -> M4 pull-ups / M5 sensors / LMR36510 -> 3V3
+  PSU B +24 V -> P1 positive -> 24V_IN_RAW -> F1 -> STPS2H100A -> 24V_PROTECTED
+  PSU B -V    -> P1 negative -> GND_IN_RAW -> Q25 -> PCB GND
+  24V_PROTECTED -> M4 pull-ups / M5 sensors / LMR36510 -> 3V3
 
 Isolation rule: PSU A -V != PSU B -V
 ```
@@ -74,17 +73,26 @@ CM35 `V/G` is not powered through PCB F1 or `24V_PROTECTED`, and the PCB does no
 Current board-level architecture:
 
 ```text
-PSU B +24V -> PCB 24V INPUT
+PSU B +24V -> P1 positive -> 24V_IN_RAW
   -> 0468.500NRHF 0.5 A / 63 V Slo-Blo fuse
   -> STPS2H100A series reverse-polarity diode
   -> 24V_PROTECTED
-       -> SMBJ30A-TR to GND
+       -> SMBJ30A-TR to PCB GND
        -> M4 pull-ups / M5 sensors
        -> LMR36510FADDAR -> 3V3
+
+PSU B -V -> P1 negative -> GND_IN_RAW
+  -> Q25 DMT10H015LFG-13 Drain; Source -> PCB GND
+     R65 10 kΩ: 24V_IN_RAW -> Gate
+     R66 100 kΩ: Gate -> Source / PCB GND
+     D12 MMSZ5242B-7-F: Cathode -> Gate; Anode -> Source / PCB GND
 ```
 
 - LMR36510FADDAR is a 4.2–65 V, 1 A synchronous buck with high-voltage transient tolerance class suitable for this nominal 24 V architecture.
 - SMBJ30A-TR uses a 30 V stand-off level so it remains off at the measured ~24 V operating point while providing transient suppression below the converter absolute high-voltage boundary under the currently assumed source conditions.
+- The low-side Q25 correction covers the actual fault case in which CM35 signal wiring remains connected while both PCB 24 V input wires are reversed. `GND_IN_RAW` must not be merged with or routed around Q25 to PCB `GND`.
+- The current-session schematic screenshot visually supports this corrected topology. Q25 symbol Drain/Gate/Source numbering to footprint-pad mapping is not proven by the screenshot and remains a narrow Stage-4 EDA verification item.
+- C14/C15/C16 are Samsung `CL31B226KPHNNNE`, LCSC `C87996`, 22 uF, 10 V, X7R, 1206 buck output capacitors; obsolete X5R wording no longer applies.
 - M1 current-session module design / EDA capture closeout is acceptable；exact values and remaining validation boundaries are maintained in `docs/module_design/m1_power.md`，not duplicated here.
 - Exact surge waveform/source impedance, startup/inrush coordination、capacitor DC-bias、thermal and layout verification remain open；no compliance claim is made.
 
@@ -108,11 +116,11 @@ The historical CM35 interface allocation in this Stage-2 envelope bounded PCB-si
 
 ## Stage 3 Cross-Module Integration Closeout
 
-- Power Flow: PSU A and PSU B domains are explicitly separated; the PSU-B PCB branch feeds M1/F1, `24V_PROTECTED`, sensors, M4 pull-ups, and `3V3`, while CM35 `V/G` is cabinet-fed directly.
+- Power Flow: PSU A and PSU B domains are explicitly separated; the PSU-B PCB branch enters M1 as `24V_IN_RAW` / `GND_IN_RAW`, with Q25 separating the raw negative input from PCB `GND`, then feeds `24V_PROTECTED`, sensors, M4 pull-ups, and `3V3`, while CM35 `V/G` is cabinet-fed directly.
 - Signal / Control Flow: USB-UART, STM32, CM35 IN/OUT, and all eight sensor NO/NC mappings are recorded without responsibility gaps.
 - Voltage / Logic Compatibility: M4 and M5 retain the reviewed 2N7002 Active-Low translation; USB/machine isolation remains unchanged.
 - Startup / Shutdown / Fault State: M4 safe-startup remains hardware-enforced; USB back-power and unverified transient/thermal behavior remain explicit later-review boundaries.
-- Cross-sheet Net Consistency: current-session visible evidence uses `3V3`, `24V_PROTECTED`, `GND`, `USB_GND`, and the recorded channel names consistently; this is screenshot/PDF evidence, not `.SchDoc` object parsing.
+- Cross-sheet Net Consistency: current-session visible evidence uses `24V_IN_RAW`, `GND_IN_RAW`, `24V_PROTECTED`, `3V3`, `GND`, `USB_GND`, and the recorded channel names consistently; this is screenshot/PDF evidence, not `.SchDoc` object parsing or footprint mapping verification.
 - Missing / Conflicting Responsibility: no Stage-3 module responsibility conflict remains. The complete same-date schematic PDF and BOM are available locally, so the Stage-3 conclusion is **READY FOR SCHEMATIC REVIEW**.
 
 - LMR36510FADDAR：0.25 A output envelope versus 1 A rating → current-class margin PASS。
