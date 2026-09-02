@@ -1,10 +1,10 @@
 # PCB Design Rules
 
-Document Status: **INITIAL BASELINE — Layout Preflight IN PROGRESS**
+Document Status: **CONFIRMED RULE BASELINE — Layout Preflight IN PROGRESS**
 
 Project Stage: **Stage 5 — PCB Layout**
 
-This file is the owning record for PCB rule and layout-preflight constraints. Stage 4 Formal Schematic Review is **PASS / CLOSED**, so the Project may enter Stage 5 Layout Preflight. Formal placement/layout work is not yet approved by this record because the manufacturing, mechanical, applicable rule, and Altium configuration items marked below remain pending.
+This file is the owning record for PCB rule and layout-preflight constraints. Stage 4 Formal Schematic Review is **PASS / CLOSED**, so the Project may enter Stage 5 Layout Preflight. The confirmed manufacturing and rule baseline below is ready for Altium configuration; formal placement/layout approval remains pending the applicable mechanical, footprint, and user Altium Scope/Priority configuration checks.
 
 ## Current Inputs and Evidence Boundary
 
@@ -36,14 +36,13 @@ This file is the owning record for PCB rule and layout-preflight constraints. St
 
 | Item | Rule / value | Unit | Basis | Scope | Altium priority / configuration |
 | --- | --- | --- | --- | --- | --- |
-| Target fabricator / service | JLCPCB / LCSC and SMT / PCBA preferred; exact service and capability source pending Layout Preflight | N/A | Project intent | Whole board | Not configured / not claimed |
-| Material | `TBD / pending Layout Preflight` | N/A | Manufacturer selection pending | Whole board | Not configured / not claimed |
-| Layer count | `TBD / pending Layout Preflight` | layers | Stackup decision pending | Whole board | Not configured / not claimed |
-| Finished board thickness | `TBD / pending Layout Preflight` | mm | Mechanical and stackup decision pending | Whole board | Not configured / not claimed |
-| Copper weight | `TBD / pending Layout Preflight` | oz or µm | Current/fabrication decision pending | Per copper layer | Not configured / not claimed |
-| Assembly side(s) | `TBD / pending Layout Preflight` | N/A | Placement and PCBA decision pending | Whole board | Not configured / not claimed |
-| Controlled impedance declaration | `TBD / pending Layout Preflight` | N/A | USB routing and stackup decision pending | Applicable nets only | Not configured / not claimed |
-| Special processes | `TBD / pending Layout Preflight` | N/A | Fabrication/assembly needs pending | As applicable | Not configured / not claimed |
+| Target fabricator / service | JLCPCB standard 2-layer manufacturing / SMT assembly target | N/A | Confirmed PCB baseline | Whole board | Documented; Altium / ordering configuration not claimed |
+| Material | FR-4 | N/A | Confirmed PCB baseline | Whole board | Documented; Altium stackup configuration not claimed |
+| Layer count | 2 | layers | Confirmed PCB baseline | Whole board | Documented; Altium layer-stack configuration not claimed |
+| Finished board thickness | 1.6 | mm | Confirmed PCB baseline | Whole board | Documented; Altium stackup configuration not claimed |
+| Copper weight | Top = 1; Bottom = 1 | oz | Confirmed PCB baseline | Top / Bottom copper | Documented; Altium stackup configuration not claimed |
+| Controlled impedance declaration | No controlled impedance | N/A | Confirmed PCB baseline; USB geometry below is routing guidance only | Whole board | No impedance rule to configure |
+| Special processes | No blind/buried vias; no via-in-pad | N/A | Confirmed PCB baseline | Whole board | Documented; actual EDA use not claimed |
 
 Project design defaults must be distinguished from the selected fabricator's published manufacturing limits. No numerical rule may be adopted solely because it is a stated manufacturing minimum; design margin must be selected during Layout Preflight.
 
@@ -51,7 +50,7 @@ Project design defaults must be distinguished from the selected fabricator's pub
 
 | Item | Current value | Status |
 | --- | --- | --- |
-| Board outline / dimensions / corner treatment | `TBD / pending Layout Preflight` | Blocking formal placement approval |
+| Board outline / dimensions / corner treatment | No mechanically constrained board size; compact practical placement preferred | Confirmed placement baseline; exact outline and corner treatment remain pending |
 | Mounting-hole count, type, diameter, coordinates, and keepouts | `TBD / pending Layout Preflight` | Blocking formal placement approval |
 | Enclosure / rail / latch / height constraints | `TBD / pending Layout Preflight` | Pending |
 | Connector board-edge positions, orientation, mating and wiring clearance | `TBD / pending Layout Preflight` | Pending; applies to CN1–CN6, P1, USB-C, SWD and user-accessible items |
@@ -63,22 +62,29 @@ The first rule baseline is configuration-first and applicability-driven: define 
 
 | Rule / configuration intent | Value / setting | Unit | Scope / members | Basis / current state | Altium priority / configuration |
 | --- | --- | --- | --- | --- | --- |
-| Default electrical clearance | `TBD / pending Layout Preflight` | mm | Whole-board default plus justified exceptions only | Fabricator capability and project design-margin decision pending | Not configured / not claimed |
-| Power/load trace width | `TBD / pending Layout Preflight` | mm | Default, 3V3, 24 V, and load-specific scopes only where current/thermal behavior differs | Current, temperature rise, copper weight, and route-length decision pending | Not configured / not claimed |
-| Routing via style | `TBD / pending Layout Preflight` | mm | Default vias plus power/thermal exceptions only if justified | Stackup, fabricator capability, and current/thermal decision pending | Not configured / not claimed |
-| 24 V input/protection separation | `TBD / pending Layout Preflight` | mm or rule setting as applicable | `24V_IN_RAW`, `24V_PROTECTED`, `GND_IN_RAW`, PCB `GND`, and Q25 protection boundary | Project safety/domain constraint confirmed; numerical value pending | Not configured / not claimed |
+| Default electrical clearance | 8 | mil | Whole-board default | Confirmed PCB baseline | Documented; actual Altium configuration not claimed |
+| `GND_IN_RAW` ↔ PCB `GND` clearance | 20 | mil | Explicit exception between `GND_IN_RAW` and `GND` only | Confirmed PCB baseline; preserves Q25 boundary | Must override the default clearance when configured; actual Altium Priority not claimed |
+| Default routing width | 6 / 8 / 12 | mil (min / preferred / max) | Whole-board default | Confirmed PCB baseline | Documented; actual Altium configuration not claimed |
+| `SW_NODE` routing width | 16 / 20 / 24 | mil (min / preferred / max) | `SW_NODE` | Confirmed PCB baseline | Must override the default width when configured; actual Altium Priority not claimed |
+| `NC_POWER` routing width | 10 / 20 / 32 | mil (min / preferred / max) | `NC_POWER` members listed below | Confirmed PCB baseline | Must override the default width when configured; actual Altium Priority not claimed |
+| Routing via style | 0.60 diameter / 0.30 drill | mm | Default routing vias | Confirmed PCB baseline | Documented; actual Altium configuration not claimed |
+| `NC_POWER` Net Class | `24V_IN_RAW`, `24V_PROTECTED`, `3V3`, `USB_VBUS`, `GND_IN_RAW` | N/A | Exact members only; `VDDA`, `GND`, and `USB_GND` are not members | Confirmed PCB baseline | Documented; actual Altium class assignment not claimed |
 | `GND_IN_RAW` to PCB `GND` non-bypass constraint | No copper, plane, polygon, via, harness, mounting feature, or rule scope may collapse the Q25 boundary | N/A | `GND_IN_RAW` and PCB `GND` objects around Q25 | Confirmed Project constraint | Not configured / not claimed |
 | `USB_GND` to machine-side `GND` isolation constraint | No copper, plane, mounting feature, shield path, test point, or other object may bridge the domains | N/A | `USB_GND` and machine-side PCB `GND` across ISO7721DR | Confirmed Project constraint | Any applicable exception must override overlapping defaults when configured; not configured / not claimed |
-| USB D+/D- routing | `TBD / pending Layout Preflight` | mm / ohm if applicable | Current USB data nets only, after reliable netlist/EDA confirmation | Stackup, controlled-impedance intent, and official routing basis pending | Not configured / not claimed |
+| USB differential-pair routing | Width = 8; gap = 8; maximum uncoupled length = 200 | mil | `USB_DP_RAW` / `USB_DM_RAW` and `USB_DP` / `USB_DM` | Confirmed routing-geometry guidance; not a controlled-impedance guarantee | Documented; actual Altium differential-pair configuration not claimed |
 | Buck regulator critical loop / feedback routing | Relative placement and routing constraint; numerical values `TBD` where needed | mm or rule setting as applicable | U2 LMR36510 VIN/PGND input loop, SW/BOOT loop, output loop, `SW_NODE`, and FB path | Confirmed Project constraint; placement/routing pending | Not configured / not claimed |
-| Polygon / plane connection strategy | `TBD / pending Layout Preflight` | N/A | Per actual power and ground domain; must preserve `GND_IN_RAW != GND` and `USB_GND != GND` | Layer strategy, thermal relief, and current-return decision pending | Not configured / not claimed |
-| Mechanical and manufacturing clearances | `TBD / pending Layout Preflight` | mm | Board outline, mounting features, connector access, and other mechanical objects that are actually present | Board outline, mounting holes, enclosure, and selected service pending | Not configured / not claimed |
+| Polygon connect style | THT = Relief Connect, 4 conductors, conductor width = 10 mil, air gap = 8 mil; SMD = Direct Connect; Via = Direct Connect | mil / N/A | Applicable polygon connections; preserve `GND_IN_RAW != GND` and `USB_GND != GND` | Confirmed PCB baseline | Documented; polygon state and Altium configuration not claimed |
+| Hole size | minimum = 10; maximum = 240 | mil | Applicable drilled holes | Confirmed PCB baseline | Documented; actual Altium configuration not claimed |
+| Hole-to-hole clearance | 8 | mil | Applicable drilled holes | Confirmed PCB baseline | Documented; actual Altium configuration not claimed |
+| PTH minimum annular ring | 10 | mil | Applicable plated through holes | Confirmed PCB baseline | Documented; actual Altium configuration not claimed |
+| Board outline clearance | 12 | mil | Applicable copper / object clearance to board outline | Confirmed PCB baseline | Documented; actual Altium configuration not claimed |
+| Component clearance | 20 | mil | Component-to-component baseline | Confirmed PCB baseline | Documented; actual Altium configuration not claimed |
 | Package-specific fabrication details | `TBD / pending Layout Preflight` where applicable | mm or N/A | Only pads/packages with real solder-mask, paste, courtyard, height, thermal-pad, or assembly differences | Remaining footprint and assembly review pending | Not configured / not claimed |
 
 ## Planned Scope and Priority Work
 
-- Establish the simplest maintainable default rules only after the fabricator, stackup, copper, and board-mechanical baseline are confirmed.
-- Create Net Classes, Object Classes, explicit scopes, or higher-priority exception rules only where members share a real electrical, routing, manufacturing, mechanical, or verification behavior. Candidate groupings such as 24 V power, 3V3 power, USB data, `USB_GND`, PCB `GND`, and raw input nets are not claimed as configured classes.
+- Establish the documented default rules and the `NC_POWER` exception scope in Altium; retain the smallest maintainable rule set.
+- Create Net Classes, Object Classes, explicit scopes, or higher-priority exception rules only where members share a real electrical, routing, manufacturing, mechanical, or verification behavior. `NC_POWER` is the confirmed Net Class and has only the members listed above; `VDDA`, PCB `GND`, and `USB_GND` are not default members.
 - Keep `GND_IN_RAW` distinct from PCB `GND`; no rule, polygon, or class assignment may collapse this boundary around Q25.
 - Keep `USB_GND` distinct from machine-side `GND`; any isolation-specific rule must have a precise Scope and higher Priority than an overlapping default rule when the user configures it.
 - Define special rules only where actual current, voltage, return-path, differential, thermal, mechanical, or verification needs justify them.
@@ -88,8 +94,8 @@ The first rule baseline is configuration-first and applicability-driven: define 
 ## Layout Preflight Open Items
 
 - Confirm exact board/hardware revision and traceable relationship among `.SchDoc`, current PDF/BOM, and the target `.PcbDoc`.
-- Confirm fabricator/service, official capability source, material, layer count, finished thickness, copper weight, assembly side(s), and controlled-impedance intent.
-- Freeze board outline, mounting holes, enclosure constraints, connector orientation, insertion paths, and wiring/debug access.
+- Configure the confirmed JLCPCB standard 2-layer / SMT baseline and applicable documented rules in Altium, then manually check their Scope and Priority.
+- Freeze the exact board outline, mounting holes, enclosure constraints, connector orientation, insertion paths, and wiring/debug access; board size itself is not mechanically constrained, and compact practical placement is preferred.
 - Verify remaining critical footprints, polarity, Pin 1, pad mapping, thermal-pad, courtyard, height, solder-mask, and paste requirements in Altium. The closed Q25 mapping is not a claim that all other footprints are verified.
 - Select only applicable rule values/settings with stated units, basis, Scope, and Priority. Known candidates include clearance, width, via/hole, USB routing, polygon/plane strategy, 24 V/protection-domain constraints, isolation-domain constraints, buck layout constraints, and any package/manufacturing/mechanical rules made applicable by the selected stackup, service, footprints, board outline, or mounting features.
 - Have the user configure and manually check the applicable Altium rules, Scope, and Priority.
