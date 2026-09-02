@@ -4,7 +4,8 @@
 
 - Responsibility: provide 8 STM32 → CM35 IN11–IN18 control channels and 8 CM35 OUT1–OUT8 → STM32 status channels.
 - Stage 3 module conclusion remains **CLOSEOUT ACCEPTABLE**; Stage 4 Formal Schematic Review is **PASS / CLOSED** and PCB Layout entry is approved.
-- This record does not claim `.SchDoc` object parsing, broader full-board footprint verification, ERC PASS, hardware-test PASS, or EMC/surge compliance.
+- Stage 5 full-board Placement has now been reviewed from the user-provided Altium placement / Ratsnest evidence and is **PASS / CLOSED**; Stage 6 Routing and Copper may proceed.
+- This record does not claim `.SchDoc` object parsing, broader full-board footprint verification, ERC PASS, DRC PASS, hardware-test PASS, or EMC/surge compliance.
 
 ## Power-domain Decision
 
@@ -82,13 +83,14 @@ Firmware remains responsible for translating the physical Active-Low GPIO state 
 
 ## Field Connectors
 
-- CM35 IN connector `CN5`: Cixi Kefa Elec `KF2EDGR-3.81-8P` PCB header, LCSC/JLCPCB `C441188`, pins ordered IN11 through IN18.
-- CM35 OUT connector `CN6`: the same `KF2EDGR-3.81-8P` PCB header, pins ordered OUT1 through OUT8.
-- Matching removable plug baseline: Cixi Kefa Elec `KF2EDGK-3.81-8P`, LCSC `C440864`, 8-position / 3.81 mm plug. Final mate fit、board-edge access、wiring clearance and enclosure acceptance remain Stage-5 mechanical checks.
-- Current CM35 connector reference designators are `CN5` / `CN6`; other exact reference designators remain governed by the current `.SchDoc`.
+- CM35 IN connector `CN6`: Cixi Kefa Elec `KF2EDGR-3.81-8P` PCB header, LCSC/JLCPCB `C441188`, pins ordered IN11 through IN18.
+- CM35 OUT connector `CN5`: the same `KF2EDGR-3.81-8P` PCB header, pins ordered OUT1 through OUT8.
+- Stage 5 placement evidence confirms the physical board relationship used for routing review: `CN6` is the left-side IN11–IN18 interface and `CN5` is the right-side OUT1–OUT8 interface. This current mapping supersedes the earlier reversed documentation wording.
+- Matching removable plug baseline: Cixi Kefa Elec `KF2EDGK-3.81-8P`, LCSC `C440864`, 8-position / 3.81 mm plug. Final mate fit、board-edge access、wiring clearance and enclosure acceptance remain mechanical verification items.
+- Current CM35 connector reference designators are `CN5` / `CN6`; other exact reference designators remain governed by the current `.SchDoc` / `.PcbDoc` implementation.
 
 ## Evidence and Remaining Validation
 
-- Current-session Altium screenshots support the visible 16-channel topology, rail naming, mapping, and module-level closeout conclusion only.
+- Current-session Altium screenshots support the visible 16-channel topology, rail naming, mapping, and Stage 5 placement relationship described above.
 - The user confirmed correction of prior `24V` labels to `24V_PROTECTED` and all low-voltage rail labels to `3V3`.
-- The `.SchDoc` remains the EDA implementation authority. ERC, complete object/net connectivity, reference designators, footprints, connector mate fit, and hardware behavior remain unverified by this documentation sync.
+- The `.SchDoc` remains the schematic implementation authority and the `.PcbDoc` remains the PCB implementation authority. ERC, complete object/net connectivity, remaining footprint details, connector mate fit, DRC, routed-copper correctness, and hardware behavior remain unverified by this documentation sync.
