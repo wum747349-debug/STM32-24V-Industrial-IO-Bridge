@@ -4,7 +4,7 @@ Document Status: **CONFIRMED RULE BASELINE — Layout Preflight IN PROGRESS**
 
 Project Stage: **Stage 5 — PCB Layout**
 
-This file is the owning record for PCB rule and layout-preflight constraints. Stage 4 Formal Schematic Review is **PASS / CLOSED**, so the Project may enter Stage 5 Layout Preflight. The confirmed manufacturing and rule baseline below is ready for Altium configuration; formal placement/layout approval remains pending the applicable mechanical, footprint, and user Altium Scope/Priority configuration checks.
+This file is the owning record for PCB rule and layout-preflight constraints. Stage 4 Formal Schematic Review is **PASS / CLOSED**, so the Project may enter Stage 5 Layout Preflight. The confirmed manufacturing, rule, and initial mechanical baseline below is ready for Altium implementation; formal placement/layout approval remains pending the applicable footprint, connector-mechanics, and user Altium Scope/Priority checks.
 
 ## Current Inputs and Evidence Boundary
 
@@ -13,7 +13,7 @@ This file is the owning record for PCB rule and layout-preflight constraints. St
 - Formal schematic review: `docs/schematic_review.md`, conclusion **可以进入 PCB Layout**.
 - Hardware Revision: `TBD`.
 - `.PcbDoc` is the authoritative PCB implementation source when created or updated by the user in Altium Designer.
-- No Altium rule configuration, Rule Scope/Priority check, PCB placement/routing, polygon state, DRC result, manufacturing output, hardware test, or EMC/surge result is claimed by this initial baseline.
+- No DRC result, manufacturing output, hardware test, or EMC/surge result is claimed by this baseline. Numerical and mechanical values recorded here are design baselines; the final `.PcbDoc` remains the implementation authority.
 
 ## Confirmed Electrical and Domain Constraints
 
@@ -48,13 +48,19 @@ Project design defaults must be distinguished from the selected fabricator's pub
 
 ## Mechanical Baseline
 
+The dimensions below are the current **Placement working baseline**, not an externally imposed enclosure dimension. The board may be tightened or expanded later if actual component placement, connector access, isolation geometry, or routing quality justifies it; any material change must be synchronized back into this record.
+
 | Item | Current value | Status |
 | --- | --- | --- |
-| Board outline / dimensions / corner treatment | No mechanically constrained board size; compact practical placement preferred | Confirmed placement baseline; exact outline and corner treatment remain pending |
-| Mounting-hole count, type, diameter, coordinates, and keepouts | `TBD / pending Layout Preflight` | Blocking formal placement approval |
-| Enclosure / rail / latch / height constraints | `TBD / pending Layout Preflight` | Pending |
-| Connector board-edge positions, orientation, mating and wiring clearance | `TBD / pending Layout Preflight` | Pending; applies to CN1–CN6, P1, USB-C, SWD and user-accessible items |
-| Test-point and debug-access envelope | `TBD / pending Layout Preflight` | Pending |
+| Board outline / dimensions / corner treatment | Initial board outline = **110 mm × 80 mm**, rectangular with **R3 mm** corner fillets | Confirmed Placement working baseline; may be refined after real placement because no fixed external board-size constraint exists |
+| Mounting-hole count / type | **4 × M3 NPTH**, round, **3.20 mm drill**, non-plated, No Net | Confirmed mechanical baseline |
+| Mounting-hole initial coordinates | Hole centers **4 mm from the two adjacent board edges**. For a 110 × 80 mm outline with lower-left origin: `(4,4)`, `(106,4)`, `(4,76)`, `(106,76)` mm | Confirmed initial Placement coordinates; final `.PcbDoc` position remains implementation authority |
+| Mounting-hole keepout | Each M3 hole uses an approximately **Ø7.0 mm solid Keepout Region** centered on the hole, on **Keep-Out Layer**, restricting **Via / Track / Copper / SMD Pad / TH Pad** | Confirmed mechanical/copper keepout baseline |
+| Enclosure / rail / latch / height constraints | No fixed enclosure, rail, latch, or board-size constraint is currently imposed; maintain practical component and wiring access | No current blocking external constraint; later system-integration verification still required |
+| Connector board-edge positions, orientation, mating and wiring clearance | `TBD / pending Placement` | Pending; applies to CN1–CN6, P1, USB-C, SWD and user-accessible items |
+| Test-point and debug-access envelope | `TBD / pending Placement` | Pending |
+
+The M3 keepout is a mechanical/electrical exclusion zone for the screw/head/washer area and does not replace the board-edge clearance rule. The four mounting holes are ordinary mechanical mounting points and are not intentional chassis/PE/GND connections.
 
 ## Applicable Rule Configuration Baseline
 
@@ -94,12 +100,12 @@ The first rule baseline is configuration-first and applicability-driven: define 
 ## Layout Preflight Open Items
 
 - Confirm exact board/hardware revision and traceable relationship among `.SchDoc`, current PDF/BOM, and the target `.PcbDoc`.
-- Configure the confirmed JLCPCB standard 2-layer / SMT baseline and applicable documented rules in Altium, then manually check their Scope and Priority.
-- Freeze the exact board outline, mounting holes, enclosure constraints, connector orientation, insertion paths, and wiring/debug access; board size itself is not mechanically constrained, and compact practical placement is preferred.
+- Configure and manually verify the confirmed JLCPCB standard 2-layer / SMT baseline and applicable documented rules in Altium, including Scope and Priority.
+- Implement / verify the confirmed initial **110 × 80 mm / R3** outline and **4 × M3 NPTH** mechanical baseline in the target `.PcbDoc`; adjust only if actual placement, connector access, isolation geometry, or routing quality creates a justified need.
+- Freeze connector board-edge positions/orientation, insertion paths, wiring clearance, and debug access during Placement.
 - Verify remaining critical footprints, polarity, Pin 1, pad mapping, thermal-pad, courtyard, height, solder-mask, and paste requirements in Altium. The closed Q25 mapping is not a claim that all other footprints are verified.
 - Select only applicable rule values/settings with stated units, basis, Scope, and Priority. Known candidates include clearance, width, via/hole, USB routing, polygon/plane strategy, 24 V/protection-domain constraints, isolation-domain constraints, buck layout constraints, and any package/manufacturing/mechanical rules made applicable by the selected stackup, service, footprints, board outline, or mounting features.
-- Have the user configure and manually check the applicable Altium rules, Scope, and Priority.
 
 ## Current Layout Preflight Conclusion
 
-**Stage 5 Layout Preflight may proceed. Formal placement/layout approval is pending the open items above.** Initial DRC is not required for Layout Preflight entry, and no DRC status is recorded.
+**Stage 5 Layout Preflight may proceed. The initial board outline and mounting-hole mechanical baseline are now confirmed; formal placement/layout approval remains pending the open items above.** Initial DRC is not required for Layout Preflight entry, and no DRC status is recorded.
