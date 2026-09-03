@@ -1,10 +1,10 @@
 # PCB Design Rules
 
-Document Status: **CONFIRMED RULE BASELINE — STAGE 6 ROUTING/COPPER IMPLEMENTED AT SCREENSHOT LEVEL — FINAL PCB REVIEW PENDING**
+Document Status: **CONFIRMED RULE BASELINE — STAGE 6 ROUTING/COPPER IMPLEMENTED — DRC EXECUTED — FINAL PCB REVIEW PENDING**
 
 Project Stage: **Stage 6 — Routing and Copper**
 
-This file owns the Project PCB rule and routing/copper baseline. Stage 4 Formal Schematic Review is **PASS / CLOSED** and Stage 5 Placement is **PASS / CLOSED**. Stage 6 routing and GND-via implementation are now substantially complete from user-provided Altium screenshot evidence; the active `.PcbDoc` remains the implementation authority and final routed-copper / DRC PASS is not yet claimed.
+This file owns the Project PCB rule and routing/copper baseline. Stage 4 Formal Schematic Review is **PASS / CLOSED** and Stage 5 Placement is **PASS / CLOSED**. Stage 6 routing, polygon implementation and GND-via stitching are substantially complete from user-provided Altium evidence. The active `.PcbDoc` remains the implementation authority. DRC has now been executed, but a formal all-violations-cleared DRC PASS and manufacturing release are not yet claimed.
 
 ## Current Inputs and Evidence Boundary
 
@@ -13,8 +13,9 @@ This file owns the Project PCB rule and routing/copper baseline. Stage 4 Formal 
 - Formal schematic review: `docs/schematic_review.md`.
 - Placement / routing / copper review record: `docs/pcb_review.md`.
 - Hardware Revision: `TBD`.
-- User-provided Altium screenshots are valid interactive engineering evidence but are not a substitute for `.PcbDoc` object parsing or DRC.
-- No DRC PASS, Gerber/manufacturing-output PASS, hardware-test PASS, or EMC/surge result is claimed here.
+- User-provided Altium screenshots and exported DRC reports are valid interactive engineering evidence.
+- The current `.PcbDoc` remains the object-level PCB implementation authority.
+- No Gerber/manufacturing-output PASS, hardware-test PASS, EMC/surge result, or final manufacturing release is claimed here.
 
 ## Confirmed Electrical and Domain Constraints
 
@@ -55,23 +56,27 @@ This file owns the Project PCB rule and routing/copper baseline. Stage 4 Formal 
 
 ## Applicable Altium Rule Baseline
 
-The Project uses a small maintainable rule set. Manufacturing limits are not automatically adopted as design targets.
+The active Altium DRC configuration shown in the latest user-provided report is the current Stage 6 working rule baseline. Manufacturing limits are not automatically adopted as design targets.
 
-| Rule / intent | Value | Scope / note |
+| Rule / intent | Current value | Scope / note |
 | --- | --- | --- |
-| Default electrical clearance | 8 mil | whole-board default |
-| `GND_IN_RAW` ↔ `GND` clearance | 20 mil | explicit higher-priority exception |
-| Default routing width | 6 / 8 / 12 mil | min / preferred / max |
-| Typical signal routing | 8 mil | current Stage 6 working baseline |
-| `SW_NODE` width | 16 / 20 / 24 mil | min / preferred / max |
-| `NC_POWER` width | 10 / 20 / 32 mil | min / preferred / max |
-| Typical power routing | 20 mil | current Stage 6 working baseline where local copper is not more appropriate |
-| Default routing via | 0.60 mm diameter / 0.30 mm drill | whole-board default routing via |
+| Default electrical clearance | **6 mil** | whole-board default |
+| `GND_IN_RAW` ↔ `GND` clearance | **20 mil** | explicit higher-priority exception |
+| Default routing width | **6 / 6 / 15 mil** | min / preferred / max |
+| `SW_NODE` width | **16 / 20 / 24 mil** | min / preferred / max |
+| `NC_POWER` width | **8 / 20 / 32 mil** | min / preferred / max |
 | `NC_POWER` Net Class | `24V_IN_RAW`, `24V_PROTECTED`, `3V3`, `USB_VBUS`, `GND_IN_RAW` | `VDDA`, `GND`, `USB_GND` are not members |
+| Typical power routing | 20 mil | preferred where local copper is not more appropriate; 8 mil is accepted as the configured local minimum |
+| Default routing via | 0.60 mm diameter / 0.30 mm drill | whole-board default routing via |
 | USB pair geometry | width 8 mil / gap 8 mil / max uncoupled 200 mil | routing guidance only; no controlled-impedance claim |
-| Polygon connect | THT Relief: 4 conductors, 10 mil conductor, 8 mil air gap; SMD Direct; Via Direct | must preserve domain boundaries |
-| Hole size | min 10 mil / max 240 mil | applicable drilled holes |
-| Hole-to-hole clearance | 8 mil | applicable drilled holes |
+| Power-plane / relief connect | 4 entries, 10 mil conductor, 10 mil air gap, 20 mil expansion | current DRC-reported connection rule |
+| Polygon connect intent | SMD Direct; Via Direct; preserve intentional THT relief and all domain boundaries | implementation must not bridge isolated nets |
+| Hole size | **10–240 mil** | applicable drilled holes |
+| Hole-to-hole clearance | **8 mil** | keep at 8 mil for current project baseline |
+| Minimum solder-mask sliver | **6 mil** | current DRC baseline; latest report has 0 violations |
+| Silk-to-solder-mask clearance | **6 mil** | documentation / manufacturability cleanup item when violated |
+| Silk-to-silk clearance | **6 mil** | documentation / legibility cleanup item; not an electrical blocker by itself |
+| Net Antennae tolerance | **0 mil** | retain checker; intentional HSE GND guard branches are explicitly dispositioned in `docs/pcb_review.md` |
 | PTH minimum annular ring | 10 mil | applicable plated holes |
 | Board-outline clearance | 12 mil | applicable copper / object clearance |
 | Component clearance | 20 mil | component-to-component baseline |
@@ -82,7 +87,9 @@ The Project uses a small maintainable rule set. Manufacturing limits are not aut
 Top:
 - primary GPIO / local signals
 - local power and critical loops
-- HSE signal routing and local GND guard
+- broad machine-side GND polygon where useful
+- USB-domain Top USB_GND copper in the isolated USB region
+- HSE signal routing and local GND guard with dedicated Top cutout
 
 Bottom:
 - machine-side GND reference plane as the dominant use
@@ -129,10 +136,12 @@ These are now PCB routing facts. Reopening them requires final-review evidence o
 
 - USB D+/D- and USB_VBUS routing are complete at screenshot level and should remain frozen unless final review finds a defect.
 - The isolated USB area uses **Bottom USB_GND polygon** as its primary reference/return copper.
-- A broad Top USB_GND polygon is intentionally not required.
-- USB-domain GND pads connect locally by short copper / vias into the Bottom USB_GND area.
+- A **Top USB_GND polygon/copper area is now implemented** in the USB domain to improve local return connectivity; this supersedes the earlier note that no broad Top USB_GND copper had been added.
+- Top and Bottom USB-domain copper remain confined to the USB side of the ISO7721 boundary.
+- USB-domain GND pads connect locally by short copper / vias into the Top/Bottom USB_GND structure.
 - ISO7721 is the boundary between `USB_VBUS / USB_GND` and `3V3 / GND`.
-- Top and Bottom copper exclusion must remain through the ISO7721 isolation region.
+- **Top and Bottom polygon-pour cutouts / copper exclusion remain through the ISO7721 isolation region.** No via is intentionally placed inside the isolation corridor.
+- `USB_GND` stitching vias may be used inside the USB domain; machine `GND` vias remain on the machine side. No cross-boundary via fence is required.
 - `IN11 -> PA8` is retained; the isolation-area conflict is solved by a short Bottom crossover that stays machine-side and outside the ISO7721 exclusion region.
 
 ## Buck Ground / Switching Baseline
@@ -152,20 +161,21 @@ These are now PCB routing facts. Reopening them requires final-review evidence o
 - X1 GND/case pads and C2/C4 GND pads use local GND vias.
 - Top uses a **10 mil GND guard track** around the local oscillator region.
 - Guard/local-ground vias connect the oscillator GND structure into Bottom GND.
-- A **Top Polygon Pour Cutout** excludes the oscillator zone from a future broad Top GND fill so the guard structure is not swallowed by the global polygon.
+- A **Top Polygon Pour Cutout** excludes the oscillator zone from broad Top GND fill so the guard structure remains explicit.
 - Bottom under/around the oscillator is reserved as a quiet local GND return/shield area; unrelated GPIO, SWD, UART, NRST, 3V3 trunks or other crossovers must not traverse it.
+- The latest DRC reports six `Net Antennae` findings in this area. User-provided object-level screenshot evidence confirms they are the intentional GND guard tracks / GND stitching vias, not unassigned copper or unrouted signal stubs. They are accepted review findings; an Altium waiver object is not claimed unless separately created.
 
 ## Debug Routing Baseline
 
 - SWDIO, SWCLK and MCU_NRST use Bottom routing where required by crossing topology.
-- The NRST Bottom segment may pass under the projection of MCU pin 39 because the MCU pad is a Top SMD object; final via/pad clearance is a DRC item.
+- The NRST Bottom segment may pass under the projection of MCU pin 39 because the MCU pad is a Top SMD object; actual clearances are now covered by the executed DRC.
 - SWDIO / SWCLK do not require differential or length-matching rules.
 
 ## Whole-Board GND / Polygon Baseline
 
-The user reports that all remaining machine-side GND points have now been provided with vias into the Bottom GND plane. This is the routing-to-review handoff point.
+Machine-side GND-via stitching is now substantially complete at screenshot level. USB-domain stitching has also been added without bridging the isolation boundary.
 
-Before Stage 6 closeout, final repour/review must confirm:
+Before Stage 6 closeout, final repour/review must still confirm:
 
 - Bottom machine `GND` remains broadly continuous despite Bottom 3V3 trunks and short crossovers.
 - No disconnected / orphan copper islands remain.
@@ -176,23 +186,53 @@ Before Stage 6 closeout, final repour/review must confirm:
 - Buck, MCU decoupling, VDDA, SWD/UART and connector return paths remain sensible after final repour.
 - M3 mounting-hole keepouts remain free of unintended copper / vias / tracks.
 
+## Latest DRC Evidence — 2026-09-03 20:33
+
+Latest user-provided Altium Design Rule Verification Report:
+
+```text
+Warnings: 0
+Rule Violations: 29
+
+Electrical / connectivity blockers:
+Short-Circuit: 0
+Un-Routed Net: 0
+Default Width: 0
+SW_NODE Width: 0
+NC_POWER Width: 0
+GND_IN_RAW <-> GND 20 mil Clearance: 0
+Hole Size: 0
+Hole-to-Hole: 0
+Minimum Solder Mask Sliver: 0
+Modified Polygon: 0
+```
+
+Remaining 29 findings are currently dispositioned as:
+
+- **4 × Clearance**: each M3 NPTH `Free-2` pad intersects its own intentionally centered solid Keepout Region. This is an intentional mounting-hole geometry / rule-scope collision, not evidence of copper entering the keepout. Preserve the M3 hole and keepout; handle with targeted exception / waiver if a clean numeric DRC is required.
+- **2 × Silk-to-Solder-Mask**: Q12 top-overlay geometry is too close to the pad solder-mask opening. Non-electrical cleanup; easy to correct and recommended before manufacturing output.
+- **17 × Silk-to-Silk**: reference-designator / footprint-silkscreen spacing. Non-electrical legibility cleanup; do not move components merely to clear these.
+- **6 × Net Antennae**: confirmed intentional HSE GND guard tracks / GND vias. Preserve the guard structure; treat as accepted intentional findings or targeted waiver.
+
+Therefore, **no currently reported violation represents a confirmed electrical routing/connectivity blocker**, but a formal DRC PASS is not claimed while the report still contains 29 findings.
+
 ## Stage 6 Final Review / Closeout Requirements
 
-Stage 6 is **not yet closed**. The next activity is final PCB review, not more routine routing.
+Stage 6 is **not yet closed**. The next activity is final PCB review and DRC disposition, not more routine routing.
 
 Required evidence before any closeout / manufacturing transition:
 
-1. No unintended unrouted nets or incomplete connections.
+1. No unintended unrouted nets or incomplete connections — latest DRC currently shows 0.
 2. Full-board Top / Bottom routing review.
 3. Final Bottom `GND` and `USB_GND` polygon continuity / island / narrow-neck review.
-4. `USB_GND != GND` verification across ISO7721.
+4. `USB_GND != GND` verification across ISO7721 after final repour.
 5. `GND_IN_RAW != GND` / Q25 non-bypass verification.
 6. Buck critical-loop / `SW_NODE` / FB review.
-7. HSE guard / return / no-crossing review.
+7. HSE guard / return / no-crossing review; preserve intentional guard antennae findings.
 8. MCU decoupling / VDDA / NRST / SWD return review.
 9. Board-edge / M3 keepout / connector mechanical review.
-10. Applicable Altium DRC execution and disposition of every remaining violation / intentional waiver.
+10. Final disposition of the 4 intentional M3 self-keepout collisions, 6 intentional HSE antennae findings, and remaining silkscreen cleanup findings.
 
 ## Current Conclusion
 
-**Stage 5 Placement remains PASS / CLOSED. Stage 6 routing and GND-via implementation are complete at user/screenshot level and the board is ready for final PCB review. DRC PASS, routed-copper PASS and manufacturing release are still pending.**
+**Stage 5 Placement remains PASS / CLOSED. Stage 6 routing, polygons and GND-via implementation are complete at user/screenshot level. DRC has been executed and no electrical blocker remains in the latest report, but formal DRC PASS, final routed-copper PASS and manufacturing release remain pending until final whole-board review and disposition of the remaining intentional / silkscreen findings.**
