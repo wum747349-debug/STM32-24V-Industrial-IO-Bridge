@@ -12,19 +12,38 @@ Hardware Revision: TBD
 
 - Framework binding 与初始化状态：[FRAMEWORK.md](FRAMEWORK.md)
 - 第一版 Requirements Baseline 已建立，Gate 1.5 已执行并记录 PASS，初始化状态为 `Initialized`。
-- Stage 2 selection closeout 保持完成，并在 [docs/component_selection_plan.md](docs/component_selection_plan.md) 记录 `PASS`；Stage 3 module design / capture closeout 已完成，结论为 `READY FOR SCHEMATIC REVIEW`。
-- M1 power、M2 STM32 minimum-system、M3 isolated USB-UART、M4 CM35 I/O 与 M5 Sensor Interface 的 module design / EDA capture 均达到 `CLOSEOUT ACCEPTABLE`；长期记录见 [M1](docs/module_design/m1_power.md)、[M2](docs/module_design/m2_stm32_minimum_system.md)、[M3](docs/module_design/m3_usb_uart_isolation.md)、[M4](docs/module_design/m4_cm35_io.md) 与 [M5](docs/module_design/m5_sensor_interface.md)。
-- M5 已完成 Sensor 1–4 的 NO / NC 共 8 路 capture，并通过当前会话 screenshot-level completeness review；该结论不代表 `.SchDoc` object parsing、footprint verification、ERC、EMC/surge 或实测通过。
-- 当前 Primary 范围包括 STM32F103C8T6、CH340C、ISO7721DR、USBLC6-2SC6、保留用于 M4/M5 的 2N7002 LCSC `C7420321`、LMR36510FADDAR、0468.500NRHF、STPS2H100A 与 SMBJ30A-TR；Nexperia `2N7002,215` 保留为 qualification history/reference，不是强制替换要求；USB-C receptacle 为 mechanical-conditional candidate。
-- 24 V source 当前有用户提供的 `MS-120-24` 24 V / 5 A / 120 W 图片证据，且用户已用万用表确认实际输出约 24 V、观察较稳定；该 evidence 不替代官方 tolerance / surge specification。
-- Stage 2 已建立 `0.225 A` 的 24 V continuous design envelope，并将 Littelfuse `0468.500NRHF` 0.5 A / 63 V Slo-Blo fuse 选为 F1 Primary；60 V PPTC 仅作为有温度限制的 Alternate architecture。
-- CM35 Stage-2 topology qualification 已关闭；Rev.A 使用两套隔离输出的 24 V switching PSU：PSU A 仅供 CM35 system `24V/0V`，PSU B 直接分配至 CM35 I/O `V/G` 与 PCB `24V/GND`。PCB `GND = CM35 G / 24G = PSU B -V`，且不得直接连接 CM35 system `0V`、PSU A `-V`、PE 或 chassis。M4 的 16-channel 2N7002 network 与 safe-startup contract 保持不变。
+- Stage 2 selection closeout 保持完成，并在 [docs/component_selection_plan.md](docs/component_selection_plan.md) 记录 `PASS`；Stage 3 module design / capture closeout 已完成。
+- M1 power、M2 STM32 minimum-system、M3 isolated USB-UART、M4 CM35 I/O 与 M5 Sensor Interface 的 module design / EDA capture 均达到 closeout-acceptable 状态；长期记录见 [M1](docs/module_design/m1_power.md)、[M2](docs/module_design/m2_stm32_minimum_system.md)、[M3](docs/module_design/m3_usb_uart_isolation.md)、[M4](docs/module_design/m4_cm35_io.md) 与 [M5](docs/module_design/m5_sensor_interface.md)。
 - Stage 4 Formal Schematic Review 已 **PASS / CLOSED**，最终结论为“可以进入 PCB Layout”。
-- Stage 5 Full-board Placement 已依据用户提供的 Altium 整板 Placement / Ratsnest evidence 完成最终检查并 **PASS / CLOSED**；当前 PCB mechanical baseline 为 **100 mm × 80 mm、R3、4 × M3 NPTH + Copper Keepout**。此前 110 mm × 80 mm working outline 已在布线前主要从右侧缩减至 100 mm × 80 mm，未发现新的 placement-level routing blocker；进一步缩宽暂不建议。
-- 当前 CM35 connector routing baseline 已校正并锁定：**左侧 `CN6 = IN11–IN18`，右侧 `CN5 = OUT1–OUT8`**；CN1–CN4 Sensor、M1 Power、M2 MCU minimum system、M3 USB/UART/Isolation 与 M4 I/O placement 均进入 routing baseline。详细记录见 [docs/pcb_review.md](docs/pcb_review.md) 与 [docs/pcb_design_rules.md](docs/pcb_design_rules.md)。
-- Stage 5 minor mechanical note：后续适合时用 3D / courtyard / 实际机械 evidence 再确认 `CN5` 与右下 M3 螺钉/垫片/可拔插端子 envelope；当前 2D evidence 不将其视为 Stage 6 blocker。
-- 最新完整 schematic PDF 与 BOM 已归档到 `hardware/outputs/`，作为当前 Stage 4 formal-review evidence；Hardware Revision 仍为 `TBD`。本结论不声称 `.SchDoc` parser、ERC、全板 footprint verification、DRC、routed-copper correctness、hardware test、EMC/surge、Manufacturing 或 Bring-up PASS。
+- Stage 5 Full-board Placement 已 **PASS / CLOSED**；当前 PCB mechanical baseline 为 **100 mm × 80 mm、R3、4 × M3 NPTH + Copper Keepout**。此前 110 mm × 80 mm working outline 已在布线前缩减至 100 mm × 80 mm，后续 routing 未要求重新打开整板 placement。
+- 当前 CM35 connector topology 保持：**左侧 `CN6 = IN11–IN18`，右侧 `CN5 = OUT1–OUT8`**；CN1–CN4 为 Sensors 1–4。
+- Stage 6 的主要 signal / power routing 已按用户提供的连续 Altium screenshot evidence 完成；整板剩余 machine-side `GND` 点已由用户完成 GND-via 下接 Bottom GND plane，当前工作已经从“继续日常拉线”转入 **final PCB review / DRC preparation**。
+- Stage 6 routing-driven GPIO baseline 已收敛并记录在 [docs/pcb_review.md](docs/pcb_review.md)：
+
+```text
+IN11 -> PA8      IN12 -> PA11
+IN13 -> PA12     IN14 -> PA15
+IN15 -> PB4      IN16 -> PB5
+IN17 -> PB6      IN18 -> PB7
+
+SENSOR2_NO -> PA0      SENSOR2_NC -> PA1
+OUT1 -> PA2            OUT2 -> PA3
+OUT3 -> PA4            OUT4 -> PA5
+OUT5 -> PA6            OUT6 -> PA7
+OUT7 -> PB10           OUT8 -> PB11
+SENSOR1_NO -> PB8      SENSOR1_NC -> PB9
+SENSOR3_NO -> PB12     SENSOR3_NC -> PB13
+SENSOR4_NO -> PB14     SENSOR4_NC -> PB15
+```
+
+- M3 USB / isolation routing 已完成到 screenshot-level review：USB D+/D- 与 USB_VBUS 保持局部、`USB_GND != GND`；USB 域采用 Bottom `USB_GND` polygon，不增加整片 Top `USB_GND`；ISO7721 Top/Bottom copper exclusion 保持隔离边界；IN11 继续使用 `PA8` 并以短 Bottom crossover 避开隔离区。
+- SWDIO / SWCLK / MCU_NRST 因局部 crossing topology 使用必要的 Bottom routing；NRST Bottom trace 从 MCU pin 39 的 Top SMD pad 投影下经过，当前判断可接受，最终仍由 DRC 确认 via / pad clearance。
+- M1 Buck 电源地已经做局部收敛：U2 exposed-pad / GND thermal vias 保留，C11/C12 输入电容使用局部 Top GND copper + 多 Via 回到底层，C14/C15/C16 输出电容侧保持宽 GND / 多 Via；最终检查仍需确认 `GND_IN_RAW` 不绕过 Q25，并复核 VIN/PGND、SW/BOOT、output 与 FB 回路。
+- M2 HSE 区已完成局部优化：X1/C2/C4 保持靠近 MCU，OSC 走线短且在 Top；使用 10 mil Top GND guard、局部 GND vias 与 Top Polygon Pour Cutout 控制晶振区铜皮；最终 PCB review 需确认 Bottom return/shield 连续且无无关信号穿过晶振保护区域。
+- 当前 Stage 6 **尚未声明 routed-copper PASS 或 DRC PASS**。必须在最终 polygon repour 后检查 Bottom GND / USB_GND continuity、island / narrow neck、return path、Q25 raw-return boundary、ISO7721 isolation、HSE、Buck、MCU decoupling 与机械 keepout，再运行并复核 Altium DRC。
+- 最新完整 schematic PDF 与 BOM 已归档到 `hardware/outputs/`，作为 Stage 4 formal-review evidence；Hardware Revision 仍为 `TBD`。
 - 用户已在 Altium 中完成 Q25 schematic symbol D/G/S、PowerDI3333-8 footprint pads 与 manufacturer pinout 的最终核对，SR-M1-001 已关闭；`GND_IN_RAW` 仍不得绕过 Q25 直接连接 PCB `GND`。
+- Stage 5 minor mechanical note 仍保留：后续用 3D / courtyard / 实际机械 evidence 确认 `CN5` 与右下 M3 螺钉/垫片/可拔插端子 envelope；当前 2D evidence 不将其视为 Stage 6 blocker。
 
 ## 项目事实入口（Project Facts）
 
@@ -46,4 +65,19 @@ Hardware Revision: TBD
 
 ## 下一步（Next Step）
 
-执行 Stage 6 — Routing and Copper。按当前基线采用“critical / module-local networks -> MCU fanout / escape -> inter-module signals -> power distribution -> GND / copper / stitching”的增量式布线方式，并在高密度网络组完成后根据 Altium screenshot / net highlighting 进行局部复核。Stage 5 closeout 不等同于 DRC、routed-copper、manufacturing、hardware-test 或 EMC/surge compliance PASS。
+执行 **Stage 6 Final PCB Review**，而不是继续常规布线。优先检查：
+
+```text
+1. unrouted / connection completeness
+2. Top / Bottom routing topology
+3. final Bottom GND + USB_GND polygon continuity / islands / narrow necks
+4. USB_GND != GND / ISO7721 isolation boundary
+5. GND_IN_RAW != GND / Q25 non-bypass
+6. Buck critical loops / SW_NODE / FB
+7. HSE ground / return / no-crossing
+8. MCU decoupling / VDDA / SWD / NRST return
+9. M3 keepouts / board edge / connector mechanical clearance
+10. Altium DRC and every remaining violation / waiver
+```
+
+Stage 6 closeout、manufacturing preparation 或 Gerber release 只有在上述 final PCB review 与必要 DRC evidence 完成后才可判断；当前不声称 manufacturing、hardware-test 或 EMC/surge compliance PASS。
