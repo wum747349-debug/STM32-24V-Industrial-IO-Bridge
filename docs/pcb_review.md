@@ -8,7 +8,7 @@ Project Stage: **Stage 6 — Routing and Copper**
 
 This record is based on the user-provided Altium Designer PCB screenshots, exported Design Rule Verification reports and the confirmed repository schematic/design baseline. The current `.PcbDoc` remains the PCB implementation authority.
 
-The evidence is sufficient to record the routing/copper decisions and current DRC disposition, but it does **not** claim Gerber/manufacturing release, assembly fit, hardware test, EMC/surge compliance, or final routed-copper PASS. A formal DRC PASS is also not claimed while intentional/non-electrical findings remain in the report.
+The evidence is sufficient to record the routing/copper decisions, current DRC disposition, and the completed PCB-side Solder/Paste mask normalization review. It does **not** claim Gerber/manufacturing release, assembly fit, hardware test, EMC/surge compliance, or final routed-copper PASS. A formal DRC PASS is also not claimed while intentional/non-electrical findings remain in the report.
 
 ## Stage 5 Closed Mechanical Baseline
 
@@ -154,6 +154,56 @@ Current screenshot-level review has not identified a reason to reopen ordinary r
 - excessive copper removal around the MCU, SWD/UART paths, HSE region or power stage;
 - isolated vias or GND pads not actually connected after repour.
 
+## PCB Solder / Paste Mask Review — 2026-09-04
+
+A systematic imported-footprint mask-property issue was identified during final PCB review. Several pads originating from the JLCPCB / EasyEDA-to-Altium flow carried fixed/manual Solder or Paste shapes instead of following the project rules.
+
+### Solder Mask normalization
+
+- Ordinary solderable pads were restored to `Solder -> Rule Expansion` where imported fixed shapes were inappropriate.
+- The current board rule remains `Solder Mask Expansion = 2 mil`.
+- User-provided Altium / 3D evidence showed the expected pad openings after normalization.
+
+### Paste Mask normalization
+
+The project Paste baseline is:
+
+```text
+SMD pads: Paste enabled
+TH pads: Top Paste disabled / Bottom Paste disabled
+Method: Absolute
+Paste Mask Expansion: 0 mil
+Ordinary SMD pad mode: Paste -> Rule Expansion
+```
+
+The imported defect presented as pad-level `Round` / fixed Paste geometry with `0 × 0 mil` dimensions. This is not equivalent to `Rule Expansion + 0 mil`; it can suppress the usable stencil aperture even while the board rule itself is correct.
+
+PCB Filter / Properties evidence was used to select the ordinary SMT pad population and normalize the pad-level Paste mode to `Rule Expansion`, while special power / exposed-pad devices were reviewed separately rather than blindly grouped with ordinary SMD pads.
+
+### Special-device review
+
+- U2 `LMR36510FADDAR`: ordinary pads and the exposed-pad Paste state were checked separately; the current `.PcbDoc` has a valid Paste aperture rather than the imported zero-size manual shape.
+- Q25 `DMT10H015LFG-13 / PowerDI3333-8`: the large Pad 9 was separately checked. Its PCB net is confirmed as `GND_IN_RAW`, consistent with the Q25 Drain connection, and a valid Paste aperture is present in the current board implementation.
+- TYPE-C-31-M-12: SMD contacts receive Paste; plated shell / fixing holes remain outside the SMD Paste population and do not receive ordinary Paste openings.
+- SW1 `TS-1088-AR02016`: ordinary SMT pads are included in the Rule Expansion normalization.
+
+### Top Paste visual evidence
+
+User-provided Altium `Top Paste (Single)` full-board evidence confirms that ordinary SMD resistors, capacitors, diodes, MOSFETs, MCU / IC leads, USB-domain SMD contacts and the reviewed special devices now have visible Paste apertures, while mounting holes and ordinary THT connector pads are not populated with unintended Paste openings.
+
+Current disposition:
+
+```text
+Current .PcbDoc Solder/Paste mask normalization: PASS / CLOSED
+Top Paste single-layer visual review: PASS
+Systematic Round 0 x 0 mil Paste defect in current .PcbDoc: RESOLVED
+Q25 Pad 9 Drain net mapping: PASS — GND_IN_RAW
+Final GTP / GBP or equivalent manufacturing Paste output: PENDING
+Source PCB1.PcbLib root-cause cleanup: PENDING unless separately confirmed
+```
+
+The manufacturing release is therefore **not** being claimed by this mask closeout. Final generated Paste / Gerber output remains a Stage 7 manufacturing-data evidence item. The source footprint library should also be normalized separately so a later library update or footprint replacement does not reintroduce the imported fixed mask properties.
+
 ## Active Altium DRC Baseline
 
 The current Stage 6 DRC working baseline is the active configuration shown in the user-provided report:
@@ -170,6 +220,7 @@ Minimum Solder Mask Sliver:   6 mil
 Silk-to-Solder-Mask:          6 mil
 Silk-to-Silk:                 6 mil
 Net Antennae Tolerance:       0 mil
+Paste Mask Expansion:         0 mil Absolute; ordinary SMD -> Rule Expansion; TH Paste disabled
 ```
 
 The detailed rule baseline is owned by `docs/pcb_design_rules.md`.
@@ -232,7 +283,8 @@ Unless the final PCB review exposes a real defect, do not reopen the following m
 - IN11 short Bottom crossover while retaining `IN11 -> PA8`;
 - SWDIO / SWCLK / NRST Bottom routing;
 - Buck local GND/current-loop refinements;
-- HSE local placement, GND guard, guard vias and polygon exclusion approach.
+- HSE local placement, GND guard, guard vias and polygon exclusion approach;
+- current `.PcbDoc` ordinary-pad Solder / Paste `Rule Expansion` normalization unless later manufacturing evidence identifies a real defect.
 
 ## Final PCB Review Checklist — Next Activity
 
@@ -248,6 +300,7 @@ The next task is **Stage 6 final whole-board PCB review / DRC disposition**, not
 8. Board-edge, M3 keepout and connector/mechanical-clearance review.
 9. Optional cleanup of Q12 silk-to-mask and remaining silk-to-silk findings.
 10. Targeted waiver / exception disposition for the four M3 self-keepout collisions and six intentional HSE GND guard antennae if a clean DRC summary is desired.
+11. At manufacturing-output generation, inspect `GTP / GBP` or equivalent Paste output and confirm the mask normalization survived the final export.
 
 Only after this final review should Stage 6 be considered for closeout or transition toward manufacturing preparation.
 
@@ -267,6 +320,15 @@ Board baseline:
 
 Stage 6 routing / polygon / GND-via implementation:
 COMPLETE AT USER / SCREENSHOT LEVEL
+
+PCB-side Solder/Paste mask normalization:
+PASS / CLOSED
+
+Top Paste visual evidence:
+PASS
+
+Final manufacturing Paste output (GTP/GBP or equivalent):
+PENDING
 
 Latest DRC:
 EXECUTED — 0 ELECTRICAL BLOCKERS IDENTIFIED
