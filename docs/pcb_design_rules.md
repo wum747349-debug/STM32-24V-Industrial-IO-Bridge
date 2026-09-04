@@ -71,6 +71,8 @@ The active Altium DRC configuration shown in the latest user-provided report is 
 | USB pair geometry | width 8 mil / gap 8 mil / max uncoupled 200 mil | routing guidance only; no controlled-impedance claim |
 | Power-plane / relief connect | 4 entries, 10 mil conductor, 10 mil air gap, 20 mil expansion | current DRC-reported connection rule |
 | Polygon connect intent | SMD Direct; Via Direct; preserve intentional THT relief and all domain boundaries | implementation must not bridge isolated nets |
+| Solder Mask Expansion | **2 mil** | ordinary pads should use `Solder -> Rule Expansion`; imported fixed/manual pad shapes must not silently override the project rule |
+| Paste Mask Expansion | **0 mil, Absolute** | ordinary SMD pads: Paste enabled and `Paste -> Rule Expansion`; TH pads: Top/Bottom Paste disabled |
 | Hole size | **10–240 mil** | applicable drilled holes |
 | Hole-to-hole clearance | **8 mil** | keep at 8 mil for current project baseline |
 | Minimum solder-mask sliver | **6 mil** | current DRC baseline; latest report has 0 violations |
@@ -80,6 +82,35 @@ The active Altium DRC configuration shown in the latest user-provided report is 
 | PTH minimum annular ring | 10 mil | applicable plated holes |
 | Board-outline clearance | 12 mil | applicable copper / object clearance |
 | Component clearance | 20 mil | component-to-component baseline |
+
+## Solder / Paste Mask Baseline and Imported-Library Guardrails
+
+The current `.PcbDoc` has been reviewed after a systematic mask-property issue was found in several footprints imported from JLCPCB / EasyEDA into Altium.
+
+### Ordinary solder-mask behavior
+
+- Ordinary solderable pads should use `Solder -> Rule Expansion` rather than a fixed per-pad solder-mask shape.
+- The project working `Solder Mask Expansion` baseline is **2 mil**.
+- A fixed imported solder-mask shape (for example an unrelated 68 mil manual shape) is not equivalent to following the project rule and must be normalized when found.
+
+### Ordinary paste-mask behavior
+
+- The project working `Paste Mask Expansion` baseline is **Absolute, 0 mil**.
+- Ordinary SMD pads should have Paste enabled and use `Paste -> Rule Expansion`.
+- Ordinary through-hole pads must not receive Top or Bottom Paste openings.
+- `Rule Expansion + 0 mil` means an effective paste aperture based on the copper pad with zero expansion. It is **not** equivalent to an imported manual `Round/Rectangular/Custom` paste shape whose X/Y dimensions are `0 × 0 mil`; the latter can produce no usable stencil aperture.
+- Pad-level manual/shape overrides must therefore be reviewed before assuming that the board rule is actually controlling the output.
+
+### Special-pad exception
+
+Thermal / exposed / power pads, large power-MOSFET lands, and manufacturer-defined stencil apertures may require dedicated review rather than blind normalization with ordinary SMD pads. Current examples are U2 `LMR36510FADDAR` and Q25 `DMT10H015LFG-13 / PowerDI3333-8`. Their electrical net mapping and final paste output must remain consistent with the active `.PcbDoc` and manufacturer/package guidance.
+
+### Library root cause and recurrence prevention
+
+- The current PCB-side systematic `Round 0 × 0 mil` Paste issue has been corrected by returning ordinary SMT pads to `Paste -> Rule Expansion`.
+- Equivalent ordinary-pad cleanup should also be preserved in the source `PCB1.PcbLib`; otherwise a later footprint re-placement or library update can reintroduce fixed mask properties into the PCB.
+- Do not update a nearly finished routed PCB from an imported footprint library merely to clean mask metadata unless the footprint delta has been reviewed; direct `.PcbDoc` pad normalization and separate `.PcbLib` cleanup are safer for the current revision.
+- Final manufacturing authority remains the generated Paste / Gerber output, not the library-editor preview alone.
 
 ## Implemented Stage 6 Layer / Copper Strategy
 
@@ -232,6 +263,7 @@ Required evidence before any closeout / manufacturing transition:
 8. MCU decoupling / VDDA / NRST / SWD return review.
 9. Board-edge / M3 keepout / connector mechanical review.
 10. Final disposition of the 4 intentional M3 self-keepout collisions, 6 intentional HSE antennae findings, and remaining silkscreen cleanup findings.
+11. Preserve the closed `.PcbDoc` Solder/Paste mask normalization and recheck final `GTP/GBP` or equivalent manufacturing Paste output before release.
 
 ## Current Conclusion
 
