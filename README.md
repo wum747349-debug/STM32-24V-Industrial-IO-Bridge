@@ -40,13 +40,17 @@ SENSOR4_NO -> PB14     SENSOR4_NC -> PB15
 - SWDIO / SWCLK / MCU_NRST 因局部 crossing topology 使用必要的 Bottom routing；此前 MCU 附近真实 Track/Via clearance findings 已在 2026-09-04 最终 DRC 迭代中清除。
 - M1 Buck 电源地已经做局部收敛：U2 exposed-pad / GND thermal vias 保留，C11/C12 输入电容使用局部 Top GND copper + 多 Via 回到底层，C14/C15/C16 输出电容侧保持宽 GND / 多 Via；`SW_NODE` width 当前 DRC 为 0 violation。
 - M2 HSE 区已完成局部优化：X1/C2/C4 保持靠近 MCU，OSC 走线短且在 Top；使用 10 mil Top GND guard、局部 GND vias 与 Top Polygon Pour Cutout 控制晶振区铜皮。当前 DRC 的 6 个 `Net Antennae` 已由用户截图确认均为 intentional HSE GND guard track / GND via 结构，不作为 dead-signal defect 处理。
-- PCB-side Solder / Paste mask normalization 已完成：ordinary SMD pads 使用 Rule Expansion；Top Paste visual evidence 已确认普通 SMT 焊盘有有效 aperture，THT / mounting features 未被错误加入普通 Paste population。最终 GTP/GBP 或等效制造输出仍待 Stage 7 检查。
-- 当前 Altium DRC working baseline 已同步到 [docs/pcb_design_rules.md](docs/pcb_design_rules.md)：Default Clearance 6 mil、`GND_IN_RAW↔GND` 20 mil、Default Width 6/6/15 mil、`SW_NODE` 16/20/24 mil、`NC_POWER` 8/20/32 mil、Hole-to-Hole 8 mil、Minimum Solder Mask Sliver 6 mil。
-- 最新 DRC（2026-09-04 18:30）结果：**Warnings 0 / Rule Violations 76**。Short-Circuit、Un-Routed、Modified Polygon、Width、`GND_IN_RAW↔GND`、Hole Size、Hole-to-Hole 均为 **0 violation**。
-- 剩余 76 条已完成工程归类：**4 × M3 NPTH 与自身 Keepout 的 intentional rule-scope collision；66 × Minimum Solder Mask Sliver；6 × intentional HSE GND guard Net Antennae**。此前真实 ordinary copper clearance findings 已清除。66 条 mask sliver 主要来自 U1 / Q25 / USB-C fine-pitch pad geometry 与少量已拉开的 Pad↔Via mask-dam 检查；当前没有从这些 findings 中识别到新的电气 routing/connectivity blocker，但 raw DRC report 仍非 zero-violation，因此不声明正式 `DRC PASS`。
-- `GND_IN_RAW -> Q25 -> PCB GND` 仍是必须保持的功能边界；最新 dedicated 20 mil DRC rule 为 0 violation，最终 manufacturing-data review 仍需确认 polygon / via / mounting feature 没有绕过 Q25。
+- PCB-side Solder / Paste mask normalization 已完成：ordinary SMD pads 使用 Rule Expansion；普通 SMT 焊盘已有有效 Paste aperture，THT / mounting features 不进入普通 Paste population。
+- PCB finalization 已完成：已增加可访问的 **3V3 + GND Top-side test pads**，采用约 2.0 mm round copper、无 drill、Top Paste disabled、Top Solder 依 Rule Expansion 开窗；关键 Top Overlay 已整理，包括 power polarity、SWD/debug、USB-UART、Sensors、CM35 IN/OUT、RESET/BOOT 与测试点标识。
+- 当前 Altium DRC baseline 已同步到 [docs/pcb_design_rules.md](docs/pcb_design_rules.md)：Default Clearance 6 mil、`GND_IN_RAW↔GND` 20 mil、Default Width 6/6/15 mil、`SW_NODE` 16/20/24 mil、`NC_POWER` 8/20/32 mil、Hole-to-Hole 8 mil、Minimum Solder Mask Sliver 6 mil。
+- **Final DRC（2026-09-04 21:42）**：Warnings **0** / Rule Violations **76**。Short-Circuit、Un-Routed、Modified Polygon、Width、`GND_IN_RAW↔GND`、Hole Size、Hole-to-Hole 均为 **0 violation**。
+- Final DRC 剩余 76 条仍为已审查分类：**4 × M3 NPTH 与自身 Keepout 的 intentional rule-scope collision；66 × Minimum Solder Mask Sliver；6 × intentional HSE GND guard Net Antennae**。没有因 test-point / overlay finalization 新增 ordinary electrical routing/connectivity blocker；raw report 仍非 zero-violation，因此不声明形式上的 `DRC PASS`。
+- `GND_IN_RAW -> Q25 -> PCB GND` 仍是必须保持的功能边界；Final DRC dedicated 20 mil rule 为 0 violation。
+- Final Gerber 已生成并上传 JLCPCB Gerber/CAM Viewer。基于用户提供的实际 CAM preview，board outline / corner geometry / four M3 holes、主要 copper、USB isolation corridor、Q25 ground-boundary interpretation、critical Top Overlay 与新增 3V3/GND test points 未发现新的 fabrication blocker。
+- **PCB Fabrication Release：READY**。该结论仅表示当前裸板制造数据可进入 JLCPCB 下单，不等同于 PCBA/SMT assembly release、hardware test、EMC/surge、mechanical-fit 或 system validation PASS。
+- **PCBA / SMT Assembly Release：NOT YET APPROVED**。后续仍需检查 BOM、CPL/Pick&Place、assembly side、坐标/旋转、Pin 1 / polarity、DNP、LCSC/JLC availability/substitution 与 SMT placement preview。
 - 最新完整 schematic PDF 与 BOM 已归档到 `hardware/outputs/`，作为 Stage 4 formal-review evidence；Hardware Revision 仍为 `TBD`。
-- Stage 5 minor mechanical note 仍保留：后续用 3D / courtyard / 实际机械 evidence 确认 `CN5` 与右下 M3 螺钉/垫片/可拔插端子 envelope；当前 2D evidence 不将其视为 Stage 6 blocker。
+- Stage 5 minor mechanical note 仍保留：后续用 3D / courtyard / 实际机械 evidence 确认 `CN5` 与右下 M3 螺钉/垫片/可拔插端子 envelope；当前 evidence 不将其视为 PCB fabrication blocker。
 
 ## 项目事实入口（Project Facts）
 
@@ -68,17 +72,17 @@ SENSOR4_NO -> PB14     SENSOR4_NC -> PB15
 
 ## 下一步（Next Step）
 
-Stage 6 ordinary routing / copper review 当前可以停止继续大范围修改。下一轮只做 **PCB finalization**：
+PCB ordinary routing / copper / finalization / fabrication CAM review 已停止继续大范围修改。下一轮进入 **SMT / PCBA Manufacturing Release review**，不重新打开已收口 routing，除非新的 assembly evidence 显示真实 blocker：
 
 ```text
-1. add accessible 3V3 + GND test points
-2. add / clean critical Top Overlay labels: power, GND, connector function, Pin 1, polarity, SWD/debug, sensor / IN / OUT identification
-3. avoid moving electrically accepted components solely for silkscreen cleanup
-4. repour polygons after the test-point / overlay edits
-5. rerun complete Final DRC and confirm no new electrical / copper / hole blocker was introduced
-6. preserve the four intentional M3 self-keepout findings and six confirmed HSE GND-guard findings as documented exceptions unless rule scoping is refined
-7. generate final Gerber / Drill / Solder Mask / Paste manufacturing data
-8. inspect the actual JLCPCB CAM / Gerber interpretation before manufacturing release
+1. review the latest BOM against the approved schematic/component baseline
+2. review CPL / Pick&Place completeness, coordinates, rotation and assembly side
+3. verify Pin 1 / polarity / orientation for Q25, diodes, U1/U2/U3/U4, USB-C and other directional parts
+4. identify DNP / hand-solder / non-SMT connector populations explicitly
+5. verify JLCPCB/LCSC availability and any proposed substitutions before acceptance
+6. verify final Paste / assembly interpretation, including exclusion of the 3V3/GND probe test pads from Paste
+7. inspect the actual JLCPCB SMT placement preview
+8. judge PCBA RELEASE READY / BLOCKED from the resulting evidence
 ```
 
-Stage 6 closeout / transition toward manufacturing preparation should be judged after the test-point / silkscreen edits and the resulting Final DRC. Manufacturing release is **not yet approved**; no hardware-test, EMC/surge, assembly-fit or manufacturing PASS is claimed.
+Current Project Stage remains **Stage 6 — Routing and Copper**; this documentation sync does not itself execute a Stage transition. PCB fabrication release is READY, while PCBA/SMT assembly release remains pending.
