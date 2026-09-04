@@ -1,6 +1,6 @@
 # PCB Review
 
-Document Status: **STAGE 5 PLACEMENT PASS / CLOSED — STAGE 6 ROUTING/COPPER IMPLEMENTATION COMPLETE — DRC EXECUTED — FINAL PCB REVIEW PENDING**
+Document Status: **STAGE 5 PLACEMENT PASS / CLOSED — STAGE 6 ROUTING/COPPER IMPLEMENTATION REVIEWED — PCB FINALIZATION PENDING**
 
 Project Stage: **Stage 6 — Routing and Copper**
 
@@ -8,7 +8,7 @@ Project Stage: **Stage 6 — Routing and Copper**
 
 This record is based on the user-provided Altium Designer PCB screenshots, exported Design Rule Verification reports and the confirmed repository schematic/design baseline. The current `.PcbDoc` remains the PCB implementation authority.
 
-The evidence is sufficient to record the routing/copper decisions, current DRC disposition, and the completed PCB-side Solder/Paste mask normalization review. It does **not** claim Gerber/manufacturing release, assembly fit, hardware test, EMC/surge compliance, or final routed-copper PASS. A formal DRC PASS is also not claimed while intentional/non-electrical findings remain in the report.
+The evidence is sufficient to record the routing/copper decisions, current DRC disposition, completed PCB-side Solder/Paste mask normalization review, and the current conclusion that no ordinary routing/copper blocker remains identified. It does **not** claim Gerber/manufacturing release, assembly fit, hardware test, EMC/surge compliance, or a formal zero-violation DRC PASS. Additional planned PCB edits — 3V3/GND test points and critical silkscreen labeling — still require a final repour and Final DRC afterward.
 
 ## Stage 5 Closed Mechanical Baseline
 
@@ -101,8 +101,9 @@ Current Stage 6 implementation decisions:
 - The ISO7721 isolation zone now uses explicit copper exclusion / polygon cutout on both Top and Bottom. Neither `USB_GND` nor machine `GND` may bridge this boundary.
 - No via is intentionally placed inside the isolation corridor; USB_GND vias stay on the USB side and machine GND vias stay on the machine side.
 - IN11 remains `PA8`. The local routing conflict near the isolation zone was solved with a short Bottom crossover outside the ISO7721 copper-exclusion region rather than reopening the GPIO allocation.
+- The Stage 6 schematic corrective review fixed the CH340C UART-side mapping to `TXD -> CH340_TX` and `RXD <- CH340_RX`; PCB connectivity was updated by the user while retaining the correct ISO7721 directions.
 
-Final PCB review must still verify there is no accidental domain bridge through polygon repour, via, track, shield, mounting feature, or other copper object.
+Final manufacturing-data review must still verify there is no accidental domain bridge through polygon repour, via, track, shield, mounting feature, or other copper object.
 
 ### SWD / Debug Routing
 
@@ -110,7 +111,7 @@ The SWD / debug interface routing is complete at screenshot level.
 
 - SWDIO, SWCLK and MCU_NRST use necessary Bottom routing because of the local top-layer crossing topology.
 - The MCU_NRST Bottom trace passes beneath the projection of MCU pin 39; this is acceptable because pin 39 is a Top SMD pad while the NRST segment is on Bottom.
-- The latest DRC no longer reports a clearance problem at this routing area.
+- Earlier true local Track/Via clearance findings in the MCU/debug area were removed during the 2026-09-04 DRC cleanup iteration.
 - No requirement exists for SWDIO / SWCLK length matching or differential-pair treatment.
 
 ### Buck Power Ground / Current Loops
@@ -123,7 +124,8 @@ The lower-left LMR36510 power area was refined during Stage 6:
 - C14/C15/C16 output-capacitor GND uses a broad local GND connection with multiple vias to the Bottom GND plane.
 - `SW_NODE` remains local and must not be enlarged by later copper edits.
 - R37/R42 feedback routing remains a small-signal path and must remain away from the switching node.
-- `GND_IN_RAW` must still pass through Q25 before becoming PCB `GND`; latest DRC shows 0 violations for the dedicated 20 mil `GND_IN_RAW` ↔ `GND` clearance rule, but final copper review still confirms the functional non-bypass boundary.
+- `GND_IN_RAW` must still pass through Q25 before becoming PCB `GND`; latest DRC shows 0 violations for the dedicated 20 mil `GND_IN_RAW` ↔ `GND` clearance rule.
+- The Stage 6 schematic corrective review fixed U2 `EN -> 24V_PROTECTED` and unused `PG -> GND`; PCB connectivity was updated by the user before the final DRC iterations.
 
 ### HSE Crystal Area
 
@@ -136,15 +138,15 @@ The STM32 HSE area received dedicated routing / ground treatment during Stage 6:
 - Guard / local oscillator GND vias connect the guard and crystal-ground points into the Bottom GND structure.
 - A Top Polygon Pour Cutout excludes the local oscillator area from broad Top GND fill so the guard structure remains explicit.
 - Bottom copper under / around the oscillator is treated as a local GND return/shield region; unrelated Bottom signals, 3V3 trunks, SWD/UART/GPIO crossovers, or other noisy nets should not traverse the protected crystal area.
-- The latest DRC reports **6 Net Antennae** findings in this region. User-provided object-level screenshot evidence confirms that these are the intentional GND guard tracks and GND stitching vias, not dead signal stubs or unassigned copper. Preserve them; treat them as accepted intentional findings / targeted waiver candidates.
+- The latest DRC still reports **6 Net Antennae** findings in this region. User-provided object-level screenshot evidence confirms that these are the intentional GND guard tracks and GND stitching vias, not dead signal stubs or unassigned copper. Preserve them; treat them as accepted intentional findings / targeted waiver candidates.
 
 No further placement change is currently recommended for X1/C2/C4.
 
 ### Whole-Board GND Status
 
-Machine-side GND-via stitching is now substantially complete. USB-domain stitching has also been added while preserving the ISO7721 boundary.
+Machine-side GND-via stitching is substantially complete. USB-domain stitching has also been added while preserving the ISO7721 boundary.
 
-Current screenshot-level review has not identified a reason to reopen ordinary routing. Final whole-board review must still inspect polygon repour and return paths for:
+Current screenshot-level review and the latest DRC iterations have not identified a reason to reopen ordinary routing. Final manufacturing-data review must still inspect polygon repour and return paths for:
 
 - disconnected / orphan copper islands;
 - narrow GND necks created by Bottom 3V3 trunks or signal crossovers;
@@ -217,37 +219,39 @@ NC_POWER Width:               8 / 20 / 32 mil
 Hole Size:                   10 ... 240 mil
 Hole-to-Hole Clearance:       8 mil
 Minimum Solder Mask Sliver:   6 mil
-Silk-to-Solder-Mask:          6 mil
-Silk-to-Silk:                 6 mil
 Net Antennae Tolerance:       0 mil
 Paste Mask Expansion:         0 mil Absolute; ordinary SMD -> Rule Expansion; TH Paste disabled
 ```
 
+Silk-to-Solder-Mask and Silk-to-Silk are no longer treated as blocking Batch-DRC noise during the current electrical/copper closeout; critical silkscreen content is instead handled in the dedicated finalization pass before manufacturing output.
+
 The detailed rule baseline is owned by `docs/pcb_design_rules.md`.
 
-## Latest DRC Review — 2026-09-03 20:33
+## Latest DRC Review — 2026-09-04 18:30
 
 Latest exported Altium Design Rule Verification Report:
 
 ```text
 Warnings:        0
-Rule Violations: 29
+Rule Violations: 76
 ```
 
-Critical electrical / connectivity rules are currently clean:
+Critical electrical / connectivity / routing rules are currently clean:
 
 ```text
+GND_IN_RAW <-> GND 20 mil:        0
 Short-Circuit:                    0
 Un-Routed Net:                    0
 Modified Polygon:                 0
 Default Width:                    0
 SW_NODE Width:                    0
 NC_POWER Width:                   0
-GND_IN_RAW <-> GND 20 mil:        0
 Hole Size:                        0
 Hole-to-Hole:                     0
-Minimum Solder Mask Sliver:       0
+Height:                           0
 ```
+
+The ordinary 6 mil Clearance rule reports 4 findings, but all four are the known M3 mounting-hole pad versus its own centered Keepout Region collisions. Earlier true Track/Pad/Via clearance findings have been cleared.
 
 ### Remaining Findings / Disposition
 
@@ -255,13 +259,16 @@ Minimum Solder Mask Sliver:       0
 
 All four remaining clearance findings are `Pad Free-2` mounting-hole pads colliding with the intentionally centered solid Keepout Region around the same mounting hole. This is an intentional geometry / DRC-scope artifact. It does **not** indicate copper, routing or a foreign via has entered the keepout. Do not move the M3 hole out of its own keepout and do not delete the keepout merely to clear these findings. Use a targeted rule exception / waiver if a numeric zero-violation report is required.
 
-**2 × Silk-to-Solder-Mask — Q12**
+**66 × Minimum Solder Mask Sliver**
 
-Q12 Top Overlay geometry is 5.907 mil / 2.692 mil from the pad solder-mask opening against a 6 mil rule. This is non-electrical and easy to clean up; recommended before manufacturing output.
+The current mask-sliver rule remains the conservative 6 mil working threshold. The remaining findings are dominated by:
 
-**17 × Silk-to-Silk**
+- U1 STM32 fine-pitch adjacent-pad mask-dam geometry around 0.128–0.129 mm;
+- Q25 adjacent-pad geometry around 0.128–0.129 mm;
+- USB-C fine-pitch contact geometry around 0.098–0.099 mm;
+- a small number of Pad↔Via checks that were deliberately moved farther apart during the DRC cleanup, with the remaining examples no longer identified as routing/copper blockers.
 
-These are reference-designator / footprint-overlay spacing findings. They affect silkscreen legibility/cleanup, not circuit connectivity. Do not move electrically accepted components solely to clear them; move or tidy overlay objects later if desired.
+Do **not** distort the U1, Q25 or USB-C copper footprint solely to force a 6 mil mask-sliver zero. These are manufacturing/mask interpretation findings, not evidence of an electrical short. The final Top Solder Mask / CAM interpretation remains a manufacturing-data review item.
 
 **6 × Net Antennae — HSE GND guard**
 
@@ -269,11 +276,13 @@ Confirmed by the user with object-level PCB screenshot evidence as the intention
 
 ### DRC Conclusion
 
-**No currently reported violation is identified as an electrical routing/connectivity blocker.** However, because the report still contains 29 intentional/non-electrical findings, this document does not label the raw Altium report as a formal zero-violation `DRC PASS`.
+**No currently reported violation is identified as an ordinary electrical routing/connectivity blocker.** The true Track/Pad/Via clearance findings discovered during the iterative DRC cleanup have been corrected. The raw Altium report still contains intentional/mechanical and manufacturing-mask findings, so this document does not label it a formal zero-violation `DRC PASS`.
+
+Because the user still plans to add 3V3/GND test points and update critical silkscreen labels, this 18:30 report is a **pre-finalization routing/copper checkpoint**, not the final release DRC.
 
 ## Stage 6 Routing Decisions That Are Now Locked
 
-Unless the final PCB review exposes a real defect, do not reopen the following merely for visual cleanup:
+Unless the later finalization edits expose a real defect, do not reopen the following merely for visual cleanup:
 
 - 100 mm × 80 mm board / Stage 5 placement baseline;
 - routing-driven GPIO assignments listed above;
@@ -286,23 +295,20 @@ Unless the final PCB review exposes a real defect, do not reopen the following m
 - HSE local placement, GND guard, guard vias and polygon exclusion approach;
 - current `.PcbDoc` ordinary-pad Solder / Paste `Rule Expansion` normalization unless later manufacturing evidence identifies a real defect.
 
-## Final PCB Review Checklist — Next Activity
+## PCB Finalization — Next Activity
 
-The next task is **Stage 6 final whole-board PCB review / DRC disposition**, not additional routine routing. Check at minimum:
+Ordinary routing / copper work can now stop. The next task is a bounded finalization pass:
 
-1. Full-board Top and Bottom routing topology.
-2. Final Bottom GND / USB_GND polygon continuity and island / neck review after final repour.
-3. `USB_GND != GND` isolation verification around ISO7721.
-4. `GND_IN_RAW != GND` / Q25 non-bypass verification.
-5. Buck VIN/PGND/SW/BOOT/output/FB loop review.
-6. HSE oscillator ground / return / no-crossing review, preserving the accepted GND guard antennae findings.
-7. MCU decoupling / VDDA / NRST / SWD local return review.
-8. Board-edge, M3 keepout and connector/mechanical-clearance review.
-9. Optional cleanup of Q12 silk-to-mask and remaining silk-to-silk findings.
-10. Targeted waiver / exception disposition for the four M3 self-keepout collisions and six intentional HSE GND guard antennae if a clean DRC summary is desired.
-11. At manufacturing-output generation, inspect `GTP / GBP` or equivalent Paste output and confirm the mask normalization survived the final export.
+1. Add an accessible `3V3` test point and a nearby `GND` test point; keep them outside connector/mechanical interference and preserve local copper clearances.
+2. Add / clean critical Top Overlay labels for power, ground, connector function, Pin 1, polarity, SWD/debug, Sensors and IN/OUT identification.
+3. Do not move electrically accepted components solely to clear non-critical silkscreen appearance.
+4. Repour polygons after any test-point copper edits.
+5. Rerun a complete Final DRC and verify that the test-point / overlay changes introduced no new Short, Un-Routed, copper Clearance, Width, Hole, domain-isolation or Net Antennae blocker.
+6. Preserve/document the four M3 self-keepout findings and six confirmed HSE guard findings unless rule scoping is refined.
+7. At manufacturing-output generation, inspect final Gerber / Drill / Top+Bottom Solder Mask / Top+Bottom Paste and confirm the mask normalization survived export.
+8. Review the actual JLCPCB CAM / Gerber interpretation before manufacturing release.
 
-Only after this final review should Stage 6 be considered for closeout or transition toward manufacturing preparation.
+Only after the finalization edit + Final DRC should Stage 6 closeout or transition toward manufacturing preparation be judged.
 
 ## Minor / Later Mechanical Note
 
@@ -321,24 +327,30 @@ Board baseline:
 Stage 6 routing / polygon / GND-via implementation:
 COMPLETE AT USER / SCREENSHOT LEVEL
 
+Stage 6 routing / copper review:
+READY — NO CURRENT ORDINARY ELECTRICAL ROUTING BLOCKER IDENTIFIED
+
 PCB-side Solder/Paste mask normalization:
 PASS / CLOSED
 
 Top Paste visual evidence:
 PASS
 
-Final manufacturing Paste output (GTP/GBP or equivalent):
-PENDING
-
 Latest DRC:
-EXECUTED — 0 ELECTRICAL BLOCKERS IDENTIFIED
-29 intentional / non-electrical findings remain
+EXECUTED — 2026-09-04 18:30
+Warnings 0 / Rule Violations 76
+4 intentional M3 self-keepout clearance findings
+66 manufacturing/mask-sliver findings
+6 intentional HSE GND-guard antennae findings
 
 Formal zero-violation DRC PASS:
 NOT CLAIMED
 
-Stage 6 final PCB review:
-READY / PENDING
+PCB finalization:
+PENDING — 3V3/GND test points + critical silkscreen + repour + Final DRC
+
+Final manufacturing Paste/Gerber/CAM review:
+PENDING
 
 Manufacturing release:
 NOT YET APPROVED
