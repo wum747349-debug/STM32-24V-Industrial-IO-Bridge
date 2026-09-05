@@ -1,14 +1,14 @@
 # PCB Review
 
-Document Status: **STAGE 5 PLACEMENT PASS / CLOSED — STAGE 6 ROUTING/COPPER REVIEWED — PCB FABRICATION RELEASE READY — PCBA RELEASE PENDING**
+Document Status: **STAGE 5 PLACEMENT PASS / CLOSED — STAGE 6 ROUTING/COPPER REVIEWED — PCB FABRICATION RELEASED — JLCPCB MANUFACTURING ORDER RELEASED / AWAITING PRODUCTION**
 
 Project Stage: **Stage 6 — Routing and Copper**
 
 ## Evidence Boundary
 
-This record is based on user-provided Altium Designer PCB screenshots, exported Design Rule Verification reports, the confirmed repository schematic/design baseline, and the final JLCPCB Gerber/CAM Viewer preview. The current `.PcbDoc` remains the PCB implementation authority.
+This record is based on user-provided Altium Designer PCB screenshots, exported Design Rule Verification reports, the confirmed repository schematic/design baseline, the final JLCPCB Gerber/CAM Viewer preview, the JLCPCB production-artwork comparison, and the user's final confirmation that the manufacturing order has been released. The current `.PcbDoc` remains the PCB implementation authority.
 
-The available evidence is sufficient to record the routing/copper decisions, final DRC disposition, Solder/Paste normalization, test-point and Top Overlay finalization, and the current conclusion that the **PCB fabrication data is READY for JLCPCB bare-board manufacture**. This conclusion does **not** claim a formal zero-violation DRC PASS, PCBA/SMT assembly release, assembly fit, hardware test, EMC/surge compliance, or system validation PASS.
+The available evidence is sufficient to record the routing/copper decisions, final DRC disposition, Solder/Paste normalization, test-point and Top Overlay finalization, PCB fabrication release, and the current operational manufacturing status. This record does **not** claim a formal zero-violation DRC PASS, an independent exhaustive SMT orientation/placement PASS beyond the reviewed manufacturing evidence, assembly fit, hardware test, EMC/surge compliance, or system validation PASS.
 
 Current Project Stage remains Stage 6; this review does not itself execute a Stage transition.
 
@@ -303,7 +303,55 @@ The available CAM evidence was checked for the following release-sensitive items
 
 No new fabrication blocker was identified from that CAM preview.
 
-Evidence limitation: the supplied CAM screenshot is sufficient for the current bare-board release judgment but does not replace a dedicated PCBA placement/orientation review and does not prove hardware behavior, assembly fit, EMC/surge performance, or post-fabrication electrical continuity.
+Evidence limitation: the supplied CAM screenshot is sufficient for the current bare-board release judgment but does not replace hardware inspection/test evidence.
+
+## JLCPCB Manufacturing Release Confirmation — 2026-09-05
+
+The user completed the final JLCPCB production-artwork confirmation and released the current order to manufacturing. The reviewed production artwork remained consistent with the accepted board geometry and did not expose a new PCB fabrication blocker.
+
+Current order / assembly configuration recorded from the manufacturing workflow:
+
+```text
+PCB quantity:              5 pcs
+PCBA quantity:             2 pcs
+Assembly service:          Economic
+Assembly side:             Top Side only
+Coordinate mode:           Single Board
+BOM groups total:          34
+JLCPCB assembled groups:   29
+DNP / hand-solder groups:  5
+```
+
+The five DNP groups correspond to nine THT parts that remain intentionally unassembled by JLCPCB and will be hand-soldered later:
+
+- `BOOT0`
+- `SWD`
+- `CM35_IN / CM35_OUT`
+- `SENSOR1~4`
+- `24V_IN`
+
+BOM matching was completed before release. Recorded matching corrections include:
+
+- `X1 -> C20617233` — 8 MHz passive crystal
+- `C11 -> C577211` — 2.2 µF / 100 V
+- `C12 -> C513710` — 220 nF / 100 V
+- `L1 -> C83454`
+
+Key directional / release-sensitive components reviewed at the available manufacturing-preview level include U1 STM32F103C8T6, U2 LMR36510FADDAR, U3 CH340C, U4 ISO7721DR, Q25 DMT10H015LFG-13, X1, USB-C TYPE-C-31-M-12, D9/D10/D11/D12 and other polarity-sensitive parts. The selected JLCPCB polarity-handling option asks the JLCPCB engineer to use the board silkscreen to assist with direction confirmation/correction.
+
+The final Altium schematic-to-PCB ECO check performed immediately before production confirmation showed only metadata/organization deltas: component-designator synchronization plus removal proposals for PCB-side Net Classes / Differential Pair objects. No Add/Remove Component, Add/Remove Net, pin-connectivity change or footprint replacement was present in the displayed ECO. The released manufacturing baseline was therefore not regenerated merely to normalize those metadata items.
+
+Manufacturing-release interpretation:
+
+```text
+JLCPCB production artwork:       CONFIRMED
+PCB fabrication order:           RELEASED
+PCBA manufacturing order:        RELEASED
+Current external state:           AWAITING PRODUCTION
+New known manufacturing blocker: 0
+```
+
+This operational release record does not fabricate a separate exhaustive independent SMT orientation PASS beyond the reviewed evidence and JLCPCB engineer confirmation workflow. It also does not claim assembly fit, hardware behavior, EMC/surge, continuity, power-on or system validation results before physical boards are received.
 
 ## Stage 6 Routing Decisions That Are Locked
 
@@ -321,18 +369,21 @@ Unless later assembly/manufacturing evidence exposes a real defect, do not reope
 - current `.PcbDoc` Solder/Paste normalization;
 - final 3V3/GND test-point geometry and critical Top Overlay unless new evidence shows a real manufacturing/assembly conflict.
 
-## PCBA / SMT — Next Review
+## Manufacturing Status / Next Activity
 
-Bare-board fabrication release is complete at the current evidence level. The next bounded activity is **SMT / PCBA Manufacturing Release review**:
+The current PCB / PCBA order has been released. Do not proactively reopen already accepted routing, copper, mask, BOM or placement while the order is in production.
 
-1. Review the latest BOM against the approved schematic/component baseline.
-2. Review CPL / Pick&Place completeness, coordinates, rotation and assembly side.
-3. Verify Pin 1 / polarity / orientation for Q25, all diodes, U1/U2/U3/U4, USB-C and other directional parts.
-4. Identify DNP / hand-solder / non-SMT connector populations explicitly.
-5. Verify JLCPCB/LCSC availability and any proposed substitutions before acceptance.
-6. Verify Paste / assembly interpretation, including that the 3V3/GND probe pads are not stencil-Paste apertures or assembly placements.
-7. Inspect the actual JLCPCB SMT placement preview.
-8. Judge `PCBA RELEASE READY / BLOCKED` from the resulting evidence.
+During manufacturing, only a new vendor query that exposes a real substitution, polarity, DFM, placement or assembly blocker should reopen the corresponding bounded review item.
+
+After boards are received, the next engineering work should start from physical incoming evidence rather than another design re-review. Expected follow-up includes:
+
+1. incoming visual inspection and component-population check;
+2. continuity / short checks before power application;
+3. controlled power-on bring-up and 3V3 verification;
+4. USB-UART / isolation functional check;
+5. STM32 SWD / reset / clock bring-up;
+6. sensor / CM35 I/O functional validation;
+7. Stage transition only when the applicable Framework / Gate evidence is actually satisfied.
 
 ## Minor / Later Mechanical Note
 
@@ -373,11 +424,21 @@ NOT CLAIMED
 JLCPCB Gerber/CAM review:
 REVIEWED — NO NEW PCB FABRICATION BLOCKER IDENTIFIED
 
-PCB fabrication release:
-READY
+JLCPCB production artwork:
+CONFIRMED — 2026-09-05
 
-PCBA / SMT assembly release:
-NOT YET APPROVED — BOM/CPL/orientation/placement review still required
+PCB fabrication release:
+RELEASED / AWAITING PRODUCTION
+
+PCBA / SMT manufacturing order:
+RELEASED / AWAITING PRODUCTION
+Top Side only; intentional THT DNP population retained for hand solder
+
+Independent exhaustive SMT orientation PASS:
+NOT SEPARATELY CLAIMED — release relies on reviewed manufacturing evidence plus selected JLCPCB engineer polarity confirmation workflow
+
+Hardware / bring-up / validation:
+NOT YET CLAIMED
 
 Project Stage transition:
 NOT PERFORMED

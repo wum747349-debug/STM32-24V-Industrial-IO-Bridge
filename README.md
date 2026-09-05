@@ -47,8 +47,10 @@ SENSOR4_NO -> PB14     SENSOR4_NC -> PB15
 - Final DRC 剩余 76 条仍为已审查分类：**4 × M3 NPTH 与自身 Keepout 的 intentional rule-scope collision；66 × Minimum Solder Mask Sliver；6 × intentional HSE GND guard Net Antennae**。没有因 test-point / overlay finalization 新增 ordinary electrical routing/connectivity blocker；raw report 仍非 zero-violation，因此不声明形式上的 `DRC PASS`。
 - `GND_IN_RAW -> Q25 -> PCB GND` 仍是必须保持的功能边界；Final DRC dedicated 20 mil rule 为 0 violation。
 - Final Gerber 已生成并上传 JLCPCB Gerber/CAM Viewer。基于用户提供的实际 CAM preview，board outline / corner geometry / four M3 holes、主要 copper、USB isolation corridor、Q25 ground-boundary interpretation、critical Top Overlay 与新增 3V3/GND test points 未发现新的 fabrication blocker。
-- **PCB Fabrication Release：READY**。该结论仅表示当前裸板制造数据可进入 JLCPCB 下单，不等同于 PCBA/SMT assembly release、hardware test、EMC/surge、mechanical-fit 或 system validation PASS。
-- **PCBA / SMT Assembly Release：NOT YET APPROVED**。后续仍需检查 BOM、CPL/Pick&Place、assembly side、坐标/旋转、Pin 1 / polarity、DNP、LCSC/JLC availability/substitution 与 SMT placement preview。
+- **PCB Fabrication Release：READY / RELEASED**。2026-09-05 用户已确认嘉立创生成的最终生产稿，当前订单已放行并进入等待生产状态；未发现新的 PCB fabrication blocker。
+- 当前下单配置记录为：**PCB 5 pcs；PCBA 2 pcs；Economic / Top Side only；Single Board 坐标文件**。34 个 BOM 物料组中 29 组由嘉立创装配，5 组保持“不贴”，对应 9 个后续手焊 THT 器件：`BOOT0`、`SWD`、`CM35_IN / CM35_OUT`、`SENSOR1~4`、`24V_IN`。
+- PCBA BOM matching 已完成；已记录的自动匹配修正包括 `X1 -> C20617233`、`C11 -> C577211`、`C12 -> C513710`、`L1 -> C83454`。关键器件 U1/U2/U3/U4/Q25/USB-C/二极管等已在当前 manufacturing review 范围内核对，嘉立创极性处理采用“由工程师依据丝印协助确认/修正方向”。
+- **JLCPCB Manufacturing Order：RELEASED / AWAITING PRODUCTION**。这表示当前订单已经由用户确认生产稿并放行；仓库仍不虚构独立的 exhaustive SMT orientation PASS、hardware test、assembly fit、EMC/surge 或 system validation PASS。
 - 最新完整 schematic PDF 与 BOM 已归档到 `hardware/outputs/`，作为 Stage 4 formal-review evidence；Hardware Revision 仍为 `TBD`。
 - Stage 5 minor mechanical note 仍保留：后续用 3D / courtyard / 实际机械 evidence 确认 `CN5` 与右下 M3 螺钉/垫片/可拔插端子 envelope；当前 evidence 不将其视为 PCB fabrication blocker。
 
@@ -72,17 +74,17 @@ SENSOR4_NO -> PB14     SENSOR4_NC -> PB15
 
 ## 下一步（Next Step）
 
-PCB ordinary routing / copper / finalization / fabrication CAM review 已停止继续大范围修改。下一轮进入 **SMT / PCBA Manufacturing Release review**，不重新打开已收口 routing，除非新的 assembly evidence 显示真实 blocker：
+当前 PCB / PCBA 制造订单已放行，设计侧不再主动重新打开已收口的 routing、polygon、mask、BOM 或 placement，除非嘉立创生产过程中返回新的 DFM / substitution / polarity / assembly query 并暴露真实 blocker。
+
+当前工作状态：
 
 ```text
-1. review the latest BOM against the approved schematic/component baseline
-2. review CPL / Pick&Place completeness, coordinates, rotation and assembly side
-3. verify Pin 1 / polarity / orientation for Q25, diodes, U1/U2/U3/U4, USB-C and other directional parts
-4. identify DNP / hand-solder / non-SMT connector populations explicitly
-5. verify JLCPCB/LCSC availability and any proposed substitutions before acceptance
-6. verify final Paste / assembly interpretation, including exclusion of the 3V3/GND probe test pads from Paste
-7. inspect the actual JLCPCB SMT placement preview
-8. judge PCBA RELEASE READY / BLOCKED from the resulting evidence
+JLCPCB production artwork: CONFIRMED
+PCB fabrication order:     RELEASED
+PCBA order:                 RELEASED
+Manufacturing state:        AWAITING PRODUCTION
 ```
 
-Current Project Stage remains **Stage 6 — Routing and Copper**; this documentation sync does not itself execute a Stage transition. PCB fabrication release is READY, while PCBA/SMT assembly release remains pending.
+收板后再进入 incoming inspection / continuity checks / power-on bring-up / USB-UART / GPIO / sensor / CM35 interface validation，并按照当时的 Framework / Stage Gate evidence 要求决定后续 Stage transition。
+
+Current Project Stage remains **Stage 6 — Routing and Copper**; this documentation sync does not itself execute a Stage transition.
