@@ -4,7 +4,7 @@
 
 - Responsibility: STM32F103C8T6 LQFP48 power, clock, reset, boot, SWD, USART1, board-level GPIO allocation, and startup interface contract.
 - Stage 3 module conclusion remains **CLOSEOUT ACCEPTABLE**; Stage 4 Formal Schematic Review is **PASS / CLOSED** and PCB Layout entry is approved.
-- This record does not claim `.SchDoc` parsing, broader full-board pin/footprint verification, ERC PASS, hardware-test PASS, or EMC/surge compliance.
+- Actual hardware bring-up has since included a 3.3 V check, ST-Link connection, STM32 firmware programming, and basic runtime/host communication. See [`docs/bringup_log.md`](../bringup_log.md). Firmware identity, programming log, reset/BOOT coverage, quantified timing, long-duration operation, EMC, and surge behavior were not provided and are not claimed PASS.
 
 ## Power, Clock, Reset, and Boot
 
@@ -46,16 +46,16 @@ PA10 <- MCU_UART_RX <- later ISO7721DR / CH340C path
 
 ## Board-level GPIO Allocation
 
-| Function          | STM32 pins                                                                                                                           |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| CM35 status sense | OUT1→PA0, OUT2→PA1, OUT3→PA2, OUT4→PA3, OUT5→PA4, OUT6→PA5, OUT7→PA6, OUT8→PA7                                                       |
-| Sensor inputs     | SENSOR1_NO→PB8, SENSOR1_NC→PB9, SENSOR2_NO→PB10, SENSOR2_NC→PB11, SENSOR3_NO→PB12, SENSOR3_NC→PB13, SENSOR4_NO→PB14, SENSOR4_NC→PB15 |
-| CM35 controls     | IN11→PB0, IN12→PB1, IN13→PB5, IN14→PB6, IN15→PB7, IN16→PA8, IN17→PA11, IN18→PA12                                                     |
-| Debug             | PA13 SWDIO, PA14 SWCLK                                                                                                               |
-| HSE               | PD0 OSC_IN, PD1 OSC_OUT                                                                                                              |
-| Reserved / spare  | PB2 BOOT1; PA15 spare; PB3 spare/SWO; PB4 spare; PC13 spare; PC14/PC15 spare with LSE unused                                         |
+| Function          | STM32 pins                                                                                                                         |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| CM35 status sense | OUT1→PA2, OUT2→PA3, OUT3→PA4, OUT4→PA5, OUT5→PA6, OUT6→PA7, OUT7→PB10, OUT8→PB11                                                   |
+| Sensor inputs     | SENSOR1_NO→PB8, SENSOR1_NC→PB9, SENSOR2_NO→PA0, SENSOR2_NC→PA1, SENSOR3_NO→PB12, SENSOR3_NC→PB13, SENSOR4_NO→PB14, SENSOR4_NC→PB15 |
+| CM35 controls     | IN11→PA8, IN12→PA11, IN13→PA12, IN14→PA15, IN15→PB4, IN16→PB5, IN17→PB6, IN18→PB7                                                |
+| Debug             | PA13 SWDIO, PA14 SWCLK                                                                                                             |
+| HSE               | PD0 OSC_IN, PD1 OSC_OUT                                                                                                            |
+| Reserved / spare  | PB0/PB1 spare; PB2 BOOT1; PB3 spare/SWO; PC13 spare; PC14/PC15 spare with LSE unused                                               |
 
-PA0–PA7 map the eight CM35 status inputs to EXTI0–EXTI7, while PB8–PB15 map the eight sensor inputs to EXTI8–EXTI15. This keeps all 16 external-input EXTI line numbers conflict-free. PA15/PB3/PB4 are SWJ/JTAG-related at reset; using them as ordinary GPIO later requires firmware to release the relevant JTAG resources.
+This table is the locked Stage 6 routing-driven GPIO baseline from `README.md` and `docs/pcb_review.md` and supersedes the earlier placement-era allocation. PA15/PB3/PB4 are SWJ/JTAG-related at reset; firmware must release the relevant JTAG resources before using PA15 and PB4 as ordinary GPIO while retaining the required SWD access.
 
 ## Cross-module Safe-startup Contract
 
@@ -66,10 +66,10 @@ MCU GPIO high-Z -> 3.3 V-side pull-up -> 2N7002 OFF
 -> 24 V side HIGH -> CM35 input inactive
 ```
 
-This is a cross-module contract, not a claim that the unfinished M4 exact network has been verified.
+This is the implemented cross-module design contract, not a claim that reset, initialization, brownout, and power-down behavior have all been measured on every output.
 
 ## Remaining Validation
 
 - The current record is based on user-reported/reviewed EDA capture and engineering decisions; the `.SchDoc` was not parsed or modified by Codex.
 - Final reset switch and SWD header mechanical selections remain open.
-- ERC, complete pin mapping against exported schematic evidence, footprint mapping, and PCB layout remain unverified.
+- Programming and basic operation have been performed, but complete reset/BOOT coverage, GPIO startup-state measurements, long-duration runtime, and a firmware-to-final-mapping audit remain to be recorded.

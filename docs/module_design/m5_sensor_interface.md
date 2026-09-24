@@ -24,8 +24,8 @@ The matching removable 3.81 mm plug is required; its exact MPN remains a procure
 | --- | --- |
 | SENSOR1_NO | PB8 |
 | SENSOR1_NC | PB9 |
-| SENSOR2_NO | PB10 |
-| SENSOR2_NC | PB11 |
+| SENSOR2_NO | PA0 |
+| SENSOR2_NC | PA1 |
 | SENSOR3_NO | PB12 |
 | SENSOR3_NC | PB13 |
 | SENSOR4_NO | PB14 |
@@ -67,6 +67,8 @@ The SMF30A is an ordinary Stage-3 support/protection component decision. Its ver
 
 ## Closeout and Evidence Boundary
 
+- The GPIO table above is synchronized to the locked Stage 6 routing-driven baseline in `README.md` and `docs/pcb_review.md` and supersedes the earlier placement-era Sensor 2 allocation.
 - Current-session screenshots show all four `KF2EDGR-3.81-4P` sensor connectors and all eight NO/NC frontends, including 8 × 100 Ω series resistors, 8 × field-side SMF30A TVS devices, 8 × 2N7002, 24 V-side 10 kΩ pull-ups, `3V3` gates, MCU-side 10 kΩ pull-ups, and the SENSOR1–SENSOR4 NO/NC GPIO mapping.
 - The TVS remains on the connector side of each 100 Ω resistor. The repeated implementation preserves `3V3`, `24V_PROTECTED`, TVS polarity, resistor placement, and GPIO mapping.
 - Screenshot review does not equal `.SchDoc` object parsing. Complete object/net connectivity, exact reference designators, footprints, ERC, EMC/surge performance, and measured hardware behavior remain outside this closeout evidence.
+- No actual four-sensor, NO/NC, or eight-channel result was provided for this documentation update. No sensor channel is marked PASS; the recommended per-channel procedure is in [`docs/bringup_log.md`](../bringup_log.md).

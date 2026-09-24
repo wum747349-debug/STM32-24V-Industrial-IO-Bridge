@@ -5,7 +5,8 @@
 - Responsibility: accept machine 24 V, provide overcurrent and reverse-polarity protection, establish `24V_PROTECTED`, suppress transients, and generate the machine-side `3V3` rail.
 - Current M1 schematic / PCB implementation disposition: **CLOSED at design-review level**. The user completed the final Q25 schematic-symbol D/G/S ↔ PowerDI3333-8 footprint-pad ↔ manufacturer-pinout check in Altium; SR-M1-001 is closed.
 - A Stage 6 corrective review on 2026-09-04 also confirmed the LMR36510 enable / power-good handling: `EN` is tied to `24V_PROTECTED`, and unused `PG` is tied to `GND` rather than left floating.
-- Stage 4 Formal Schematic Review remains **PASS / CLOSED** as the historical gate; the later corrective delta is documented here and in `docs/schematic_review.md`. This record does not claim `.SchDoc` parsing, broader full-board pin/footprint verification, ERC PASS, measured startup, hardware-test PASS, or surge/EMC compliance.
+- Stage 4 Formal Schematic Review remains **PASS / CLOSED** as the historical gate; the later corrective delta is documented here and in `docs/schematic_review.md`.
+- Actual hardware bring-up has since included 24 V board power and a practical check of the 3.3 V test point before ST-Link connection. See [`docs/bringup_log.md`](../bringup_log.md). This does not add an exact voltage, input-current, ripple, startup, load, thermal, abnormal-supply, surge, or EMC result and is not a complete power-stage PASS.
 
 ## Structured Connection Facts
 
@@ -59,12 +60,12 @@ P1 is the current capture choice, not final enclosure/mechanical approval. No ad
 - C11/C12 input-capacitor GND uses compact local Top GND copper with multiple GND vias; C14/C15/C16 output return uses broad local GND / multiple vias.
 - `SW_NODE` remains local and the current DRC width rule reports no violation.
 - `GND_IN_RAW -> Q25 -> GND` remains a locked functional boundary; the dedicated 20 mil `GND_IN_RAW` ↔ `GND` DRC rule reports 0 violation in the latest reviewed DRC.
-- Final Gerber/CAM manufacturing interpretation is still pending and is not implied by the PCB-side closeout.
+- Final Gerber/CAM manufacturing interpretation and board manufacture occurred after this design closeout; neither event by itself proves startup, power integrity, or protection performance.
 
 ## Remaining Validation
 
-- Full-board startup/inrush and F1 time-current coordination are unmeasured.
+- Full-board startup/inrush, quantified steady-state input current, and F1 time-current coordination are unmeasured.
 - C14/C15/C16 effective capacitance under DC bias, diode/MOSFET loss, ripple, and thermal behavior remain to be checked as applicable.
 - Preserve the user-verified Q25 D/G/S ↔ PowerDI3333-8 pad ↔ manufacturer-pinout mapping during any later PCB edit; `GND_IN_RAW` must not bypass Q25 into PCB `GND`.
-- Final manufacturing-data review, assembly result, startup behavior and measured power integrity remain pending.
+- The released assembly has powered and its 3.3 V rail has been checked at a basic functional level; quantified startup behavior, measured power integrity, load behavior, and abnormal-input behavior remain pending.
 - No source-impedance, surge-waveform, IEC, or other compliance result is claimed.

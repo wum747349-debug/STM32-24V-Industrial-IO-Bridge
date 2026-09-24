@@ -5,7 +5,7 @@
 - Responsibility: provide 8 STM32 → CM35 IN11–IN18 control channels and 8 CM35 OUT1–OUT8 → STM32 status channels.
 - Stage 3 module conclusion remains **CLOSEOUT ACCEPTABLE**; Stage 4 Formal Schematic Review is **PASS / CLOSED** and PCB Layout entry is approved.
 - Stage 5 full-board Placement has now been reviewed from the user-provided Altium placement / Ratsnest evidence and is **PASS / CLOSED**; Stage 6 Routing and Copper may proceed.
-- This record does not claim `.SchDoc` object parsing, broader full-board footprint verification, ERC PASS, DRC PASS, hardware-test PASS, or EMC/surge compliance.
+- Actual hardware bring-up has since included host-commanded industrial I/O debugging and corresponding motion-controller input-terminal voltage checks. Approximate inactive/active behavior of 24 V/0 V was observed for the Active-Low interface. See [`docs/bringup_log.md`](../bringup_log.md). The tested channel subset was not supplied, so this is not a channel-by-channel CN5/CN6 PASS or an EMC/surge result.
 
 ## Power-domain Decision
 
@@ -45,14 +45,14 @@ No default RC filtering capacitor is fitted in M4. The present installation evid
 
 | CM35 input | STM32 GPIO | Physical behavior |
 | --- | --- | --- |
-| IN11 | PB0 | GPIO LOW = Active; GPIO HIGH = Inactive |
-| IN12 | PB1 | GPIO LOW = Active; GPIO HIGH = Inactive |
-| IN13 | PB5 | GPIO LOW = Active; GPIO HIGH = Inactive |
-| IN14 | PB6 | GPIO LOW = Active; GPIO HIGH = Inactive |
-| IN15 | PB7 | GPIO LOW = Active; GPIO HIGH = Inactive |
-| IN16 | PA8 | GPIO LOW = Active; GPIO HIGH = Inactive |
-| IN17 | PA11 | GPIO LOW = Active; GPIO HIGH = Inactive |
-| IN18 | PA12 | GPIO LOW = Active; GPIO HIGH = Inactive |
+| IN11 | PA8 | GPIO LOW = Active; GPIO HIGH = Inactive |
+| IN12 | PA11 | GPIO LOW = Active; GPIO HIGH = Inactive |
+| IN13 | PA12 | GPIO LOW = Active; GPIO HIGH = Inactive |
+| IN14 | PA15 | GPIO LOW = Active; GPIO HIGH = Inactive |
+| IN15 | PB4 | GPIO LOW = Active; GPIO HIGH = Inactive |
+| IN16 | PB5 | GPIO LOW = Active; GPIO HIGH = Inactive |
+| IN17 | PB6 | GPIO LOW = Active; GPIO HIGH = Inactive |
+| IN18 | PB7 | GPIO LOW = Active; GPIO HIGH = Inactive |
 
 Safe-startup contract:
 
@@ -70,14 +70,14 @@ This hardware default does not depend on firmware initialization timing.
 
 | CM35 output | STM32 GPIO | Physical behavior |
 | --- | --- | --- |
-| OUT1 | PA0 | CM35 Active → MCU LOW; Inactive → MCU HIGH |
-| OUT2 | PA1 | CM35 Active → MCU LOW; Inactive → MCU HIGH |
-| OUT3 | PA2 | CM35 Active → MCU LOW; Inactive → MCU HIGH |
-| OUT4 | PA3 | CM35 Active → MCU LOW; Inactive → MCU HIGH |
-| OUT5 | PA4 | CM35 Active → MCU LOW; Inactive → MCU HIGH |
-| OUT6 | PA5 | CM35 Active → MCU LOW; Inactive → MCU HIGH |
-| OUT7 | PA6 | CM35 Active → MCU LOW; Inactive → MCU HIGH |
-| OUT8 | PA7 | CM35 Active → MCU LOW; Inactive → MCU HIGH |
+| OUT1 | PA2 | CM35 Active → MCU LOW; Inactive → MCU HIGH |
+| OUT2 | PA3 | CM35 Active → MCU LOW; Inactive → MCU HIGH |
+| OUT3 | PA4 | CM35 Active → MCU LOW; Inactive → MCU HIGH |
+| OUT4 | PA5 | CM35 Active → MCU LOW; Inactive → MCU HIGH |
+| OUT5 | PA6 | CM35 Active → MCU LOW; Inactive → MCU HIGH |
+| OUT6 | PA7 | CM35 Active → MCU LOW; Inactive → MCU HIGH |
+| OUT7 | PB10 | CM35 Active → MCU LOW; Inactive → MCU HIGH |
+| OUT8 | PB11 | CM35 Active → MCU LOW; Inactive → MCU HIGH |
 
 Firmware remains responsible for translating the physical Active-Low GPIO state to the positive application/protocol semantic.
 
@@ -91,6 +91,7 @@ Firmware remains responsible for translating the physical Active-Low GPIO state 
 
 ## Evidence and Remaining Validation
 
+- The GPIO tables above are synchronized to the locked Stage 6 routing-driven baseline in `README.md` and `docs/pcb_review.md`; they supersede this module's earlier placement-era mapping.
 - Current-session Altium screenshots support the visible 16-channel topology, rail naming, mapping, and Stage 5 placement relationship described above.
 - The user confirmed correction of prior `24V` labels to `24V_PROTECTED` and all low-voltage rail labels to `3V3`.
-- The `.SchDoc` remains the schematic implementation authority and the `.PcbDoc` remains the PCB implementation authority. ERC, complete object/net connectivity, remaining footprint details, connector mate fit, DRC, routed-copper correctness, and hardware behavior remain unverified by this documentation sync.
+- The `.SchDoc` remains the schematic implementation authority and the `.PcbDoc` remains the PCB implementation authority. Basic industrial control behavior has been exercised, but the complete CN6 control table, CN5 status table, reset/initialization/power-down safety states, connector mate fit, EMC, and surge behavior remain to be recorded.

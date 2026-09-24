@@ -4,7 +4,7 @@
 
 - Responsibility: provide the PC USB device interface, USB data-line ESD protection, USB-to-UART conversion, and galvanically isolated bidirectional UART connection to STM32 USART1.
 - Stage 3 module conclusion remains **CLOSEOUT ACCEPTABLE**; Stage 4 Formal Schematic Review is **PASS / CLOSED** and PCB Layout entry is approved.
-- This record does not claim `.SchDoc` parsing, broader full-board footprint verification, ERC PASS, USB enumeration test, measured isolation performance, hardware-test PASS, or EMC/ESD compliance.
+- Actual hardware bring-up has since included host serial communication and basic functional debugging. See [`docs/bringup_log.md`](../bringup_log.md). The supplied evidence does not include enumeration details, a bidirectional error-rate/duration record, every power sequence, measured isolation performance, isolation withstand, EMC/ESD, or a complete hardware-test PASS.
 
 ## Power Domains and Structured Connection Facts
 
@@ -105,5 +105,6 @@ The isolator is powered independently on both sides: `USB_VBUS / USB_GND` on sid
 ## Remaining Validation
 
 - USB-C receptacle mechanical/enclosure qualification remains open.
-- Actual USB enumeration, sustained UART communication, unplug/replug behavior, and simultaneous/independent domain power sequencing are untested.
+- Basic host communication has been exercised; detailed enumeration evidence, sustained/error-counted UART testing, unplug/replug recovery, and simultaneous/independent domain power sequencing remain to be recorded.
 - ERC, complete pin/footprint mapping against exported schematic evidence, PCB isolation geometry, signal integrity, EMC/ESD, and system-level isolation compliance remain unverified.
+- A normal non-isolated ST-Link can connect the host-computer ground to PCB `GND`. When the computer or grounded instruments also touch the USB domain, this can create an external `USB_GND` ↔ PCB `GND` path and defeat the intended isolation. Isolation-related tests must account for or remove this path; basic UART success does not prove isolation integrity.

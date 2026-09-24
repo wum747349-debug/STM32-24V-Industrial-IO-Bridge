@@ -51,6 +51,8 @@ SENSOR4_NO -> PB14     SENSOR4_NC -> PB15
 - 当前下单配置记录为：**PCB 5 pcs；PCBA 2 pcs；Economic / Top Side only；Single Board 坐标文件**。34 个 BOM 物料组中 29 组由嘉立创装配，5 组保持“不贴”，对应 9 个后续手焊 THT 器件：`BOOT0`、`SWD`、`CM35_IN / CM35_OUT`、`SENSOR1~4`、`24V_IN`。
 - PCBA BOM matching 已完成；已记录的自动匹配修正包括 `X1 -> C20617233`、`C11 -> C577211`、`C12 -> C513710`、`L1 -> C83454`。关键器件 U1/U2/U3/U4/Q25/USB-C/二极管等已在当前 manufacturing review 范围内核对，嘉立创极性处理采用“由工程师依据丝印协助确认/修正方向”。
 - **JLCPCB Manufacturing Order：RELEASED / AWAITING PRODUCTION**。这表示当前订单已经由用户确认生产稿并放行；仓库仍不虚构独立的 exhaustive SMT orientation PASS、hardware test、assembly fit、EMC/surge 或 system validation PASS。
+- 上述 `AWAITING PRODUCTION` 是 2026-09-05 制造订单放行时的**历史状态**，不是当前实物状态。当前 PCB/PCBA 已完成实际硬件调试：已完成 24 V 上电、板上 3.3 V 检查、ST-Link 烧录、上位机串口通信，以及工业 I/O 基本控制与端子电压检查；实际过程和证据边界见 [docs/bringup_log.md](docs/bringup_log.md)。
+- 当前 Bring-up 结论限于已确认的基本上电、烧录、通信和工业 I/O 功能调试。尚无完整的逐通道记录、量化输入电流、纹波/启动波形、负载与异常供电、EMC/浪涌或隔离耐压证据，因此这些项目不声明 PASS，也不形成完整系统验收结论。
 - 最新完整 schematic PDF 与 BOM 已归档到 `hardware/outputs/`，作为 Stage 4 formal-review evidence；Hardware Revision 仍为 `TBD`。
 - Stage 5 minor mechanical note 仍保留：后续用 3D / courtyard / 实际机械 evidence 确认 `CN5` 与右下 M3 螺钉/垫片/可拔插端子 envelope；当前 evidence 不将其视为 PCB fabrication blocker。
 
@@ -68,23 +70,34 @@ SENSOR4_NO -> PB14     SENSOR4_NC -> PB15
 - [Stage 文档职责](docs/README.md)
 - [PCB Design Rules](docs/pcb_design_rules.md)
 - [PCB Review](docs/pcb_review.md)
+- [Bring-up 记录与推荐测试计划](docs/bringup_log.md)
 - [Hardware source 与 Evidence 职责](hardware/README.md)
 - [本地资料职责](references/README.md)
 - [Project Validator](scripts/validate_project_repository.py)
 
 ## 下一步（Next Step）
 
-当前 PCB / PCBA 制造订单已放行，设计侧不再主动重新打开已收口的 routing、polygon、mask、BOM 或 placement，除非嘉立创生产过程中返回新的 DFM / substitution / polarity / assembly query 并暴露真实 blocker。
+当前 PCB / PCBA 已完成实际硬件调试。设计侧不因本次记录同步重新打开已收口的 routing、polygon、mask、BOM 或 placement；后续工作是按 [Bring-up 记录与推荐测试计划](docs/bringup_log.md) 补充规范、可追溯的量化测试证据。
 
-当前工作状态：
+历史制造状态（2026-09-05 订单放行时）：
 
 ```text
 JLCPCB production artwork: CONFIRMED
 PCB fabrication order:     RELEASED
 PCBA order:                 RELEASED
-Manufacturing state:        AWAITING PRODUCTION
+Manufacturing state then:   AWAITING PRODUCTION
 ```
 
-收板后再进入 incoming inspection / continuity checks / power-on bring-up / USB-UART / GPIO / sensor / CM35 interface validation，并按照当时的 Framework / Stage Gate evidence 要求决定后续 Stage transition。
+当前实物状态：
+
+```text
+24 V power-on / 3.3 V check: COMPLETED (basic check; no quantified report)
+STM32 programming:           COMPLETED
+Host UART communication:    COMPLETED (basic functional debug)
+Industrial I/O debug:       COMPLETED (basic control/voltage behavior)
+Formal quantified testing:  NOT YET DOCUMENTED
+```
+
+建议依次补充电源量化、USB-UART 供电时序、全部工业 I/O 和 4 路传感器 NO/NC 的逐通道记录，再根据明确的系统限值形成正式 `docs/test_report.md`；本轮不新建该报告。
 
 Current Project Stage remains **Stage 6 — Routing and Copper**; this documentation sync does not itself execute a Stage transition.
