@@ -1,103 +1,119 @@
 # STM32 24V Industrial I/O Bridge
 
 Project Identity: wum747349-debug/STM32-24V-Industrial-IO-Bridge
+
+Hardware Revision: Rev.C
+
+Hardware Status: Fabricated / PCBA Assembled / Basic Functional Bring-up Completed / In Practical Use
+
 Current Project Stage: Stage 6 — Routing and Copper
-Hardware Revision: TBD
 
-## 项目目的（Purpose）
-
-设计一块以 STM32F103C8T6 为主控、面向 24 V 工业现场的 I/O 中继与接口板，连接 C# 上位机、板载 USB-UART、STM32 与 CM35 运动控制器，并接入 4 路 AN-LS18-40-N 光电开关。新板替代外购 STM32 最小系统板与外置 USB 转串口模块，并面向 JLCPCB / LCSC 及 SMT / PCBA 实现。
-
-## 当前状态（Current Status）
-
-- Framework binding 与初始化状态：[FRAMEWORK.md](FRAMEWORK.md)
-- 第一版 Requirements Baseline 已建立，Gate 1.5 已执行并记录 PASS，初始化状态为 `Initialized`。
-- Stage 2 selection closeout 保持完成，并在 [docs/component_selection_plan.md](docs/component_selection_plan.md) 记录 `PASS`；Stage 3 module design / capture closeout 已完成。
-- M1 power、M2 STM32 minimum-system、M3 isolated USB-UART、M4 CM35 I/O 与 M5 Sensor Interface 的 module design / EDA capture 均达到 closeout-acceptable 状态；长期记录见 [M1](docs/module_design/m1_power.md)、[M2](docs/module_design/m2_stm32_minimum_system.md)、[M3](docs/module_design/m3_usb_uart_isolation.md)、[M4](docs/module_design/m4_cm35_io.md) 与 [M5](docs/module_design/m5_sensor_interface.md)。
-- Stage 4 Formal Schematic Review 已 **PASS / CLOSED**。2026-09-04 Stage 6 final review 期间发现并修正两项 post-review implementation defect：U2 LMR36510 `EN -> 24V_PROTECTED`、unused `PG -> GND`；U3 CH340C 修正为 `TXD -> CH340_TX`、`RXD <- CH340_RX`，保持 ISO7721 正确方向。该 targeted correction 已记录在 [docs/schematic_review.md](docs/schematic_review.md)，但不声称 full-board ERC PASS。
-- Stage 5 Full-board Placement 已 **PASS / CLOSED**；当前 PCB mechanical baseline 为 **100 mm × 80 mm、R3、4 × M3 NPTH + Copper Keepout**。此前 110 mm × 80 mm working outline 已在布线前缩减至 100 mm × 80 mm，后续 routing 未要求重新打开整板 placement。
-- 当前 CM35 connector topology 保持：**左侧 `CN6 = IN11–IN18`，右侧 `CN5 = OUT1–OUT8`**；CN1–CN4 为 Sensors 1–4。
-- Stage 6 的主要 signal / power routing、Top/Bottom polygon 与 machine-side GND-via stitching 已按用户提供的连续 Altium screenshot evidence 完成到 final-review level；当前未识别到需要重新打开 ordinary routing 的电气 blocker。
-- Stage 6 routing-driven GPIO baseline 已收敛并记录在 [docs/pcb_review.md](docs/pcb_review.md)：
+面向 24 V 工业现场的 STM32 I/O interface / bridge board，连接 PC、板载隔离 USB-UART、STM32、CM35 运动控制器和 4 路 AN-LS18-40-N 光电开关。Rev.C 将 STM32 最小系统、USB-C 通信、数字隔离、现场 I/O 和 24 V 电源保护集成在一块 100 mm × 80 mm PCB 上。
 
 ```text
-IN11 -> PA8      IN12 -> PA11
-IN13 -> PA12     IN14 -> PA15
-IN15 -> PB4      IN16 -> PB5
-IN17 -> PB6      IN18 -> PB7
-
-SENSOR2_NO -> PA0      SENSOR2_NC -> PA1
-OUT1 -> PA2            OUT2 -> PA3
-OUT3 -> PA4            OUT4 -> PA5
-OUT5 -> PA6            OUT6 -> PA7
-OUT7 -> PB10           OUT8 -> PB11
-SENSOR1_NO -> PB8      SENSOR1_NC -> PB9
-SENSOR3_NO -> PB12     SENSOR3_NC -> PB13
-SENSOR4_NO -> PB14     SENSOR4_NC -> PB15
+24 V Industrial Power
+        |
+        v
+Input Protection / 24 V -> 3.3 V
+        |
+        v
+      STM32
+        |-- Isolated USB-UART (USB-C / CH340C / ISO7721)
+        |-- CM35 Motion-controller I/O
+        `-- Photoelectric Sensor Interfaces (NO / NC)
 ```
 
-- M3 USB / isolation routing 已完成到 final-review level：USB D+/D- 与 USB_VBUS 保持局部、`USB_GND != GND`；USB 域采用 Bottom `USB_GND` polygon 作为主要 reference，同时已实现 Top `USB_GND` copper；ISO7721 Top/Bottom 均保留明确 polygon cutout / copper exclusion，USB_GND 与 machine GND 的 Via 均留在各自域内，不跨 isolation corridor。
-- SWDIO / SWCLK / MCU_NRST 因局部 crossing topology 使用必要的 Bottom routing；此前 MCU 附近真实 Track/Via clearance findings 已在 2026-09-04 最终 DRC 迭代中清除。
-- M1 Buck 电源地已经做局部收敛：U2 exposed-pad / GND thermal vias 保留，C11/C12 输入电容使用局部 Top GND copper + 多 Via 回到底层，C14/C15/C16 输出电容侧保持宽 GND / 多 Via；`SW_NODE` width 当前 DRC 为 0 violation。
-- M2 HSE 区已完成局部优化：X1/C2/C4 保持靠近 MCU，OSC 走线短且在 Top；使用 10 mil Top GND guard、局部 GND vias 与 Top Polygon Pour Cutout 控制晶振区铜皮。当前 DRC 的 6 个 `Net Antennae` 已由用户截图确认均为 intentional HSE GND guard track / GND via 结构，不作为 dead-signal defect 处理。
-- PCB-side Solder / Paste mask normalization 已完成：ordinary SMD pads 使用 Rule Expansion；普通 SMT 焊盘已有有效 Paste aperture，THT / mounting features 不进入普通 Paste population。
-- PCB finalization 已完成：已增加可访问的 **3V3 + GND Top-side test pads**，采用约 2.0 mm round copper、无 drill、Top Paste disabled、Top Solder 依 Rule Expansion 开窗；关键 Top Overlay 已整理，包括 power polarity、SWD/debug、USB-UART、Sensors、CM35 IN/OUT、RESET/BOOT 与测试点标识。
-- 当前 Altium DRC baseline 已同步到 [docs/pcb_design_rules.md](docs/pcb_design_rules.md)：Default Clearance 6 mil、`GND_IN_RAW↔GND` 20 mil、Default Width 6/6/15 mil、`SW_NODE` 16/20/24 mil、`NC_POWER` 8/20/32 mil、Hole-to-Hole 8 mil、Minimum Solder Mask Sliver 6 mil。
-- **Final DRC（2026-09-04 21:42）**：Warnings **0** / Rule Violations **76**。Short-Circuit、Un-Routed、Modified Polygon、Width、`GND_IN_RAW↔GND`、Hole Size、Hole-to-Hole 均为 **0 violation**。
-- Final DRC 剩余 76 条仍为已审查分类：**4 × M3 NPTH 与自身 Keepout 的 intentional rule-scope collision；66 × Minimum Solder Mask Sliver；6 × intentional HSE GND guard Net Antennae**。没有因 test-point / overlay finalization 新增 ordinary electrical routing/connectivity blocker；raw report 仍非 zero-violation，因此不声明形式上的 `DRC PASS`。
-- `GND_IN_RAW -> Q25 -> PCB GND` 仍是必须保持的功能边界；Final DRC dedicated 20 mil rule 为 0 violation。
-- Final Gerber 已生成并上传 JLCPCB Gerber/CAM Viewer。基于用户提供的实际 CAM preview，board outline / corner geometry / four M3 holes、主要 copper、USB isolation corridor、Q25 ground-boundary interpretation、critical Top Overlay 与新增 3V3/GND test points 未发现新的 fabrication blocker。
-- **PCB Fabrication Release：READY / RELEASED**。2026-09-05 用户已确认嘉立创生成的最终生产稿，当前订单已放行并进入等待生产状态；未发现新的 PCB fabrication blocker。
-- 当前下单配置记录为：**PCB 5 pcs；PCBA 2 pcs；Economic / Top Side only；Single Board 坐标文件**。34 个 BOM 物料组中 29 组由嘉立创装配，5 组保持“不贴”，对应 9 个后续手焊 THT 器件：`BOOT0`、`SWD`、`CM35_IN / CM35_OUT`、`SENSOR1~4`、`24V_IN`。
-- PCBA BOM matching 已完成；已记录的自动匹配修正包括 `X1 -> C20617233`、`C11 -> C577211`、`C12 -> C513710`、`L1 -> C83454`。关键器件 U1/U2/U3/U4/Q25/USB-C/二极管等已在当前 manufacturing review 范围内核对，嘉立创极性处理采用“由工程师依据丝印协助确认/修正方向”。
-- **JLCPCB Manufacturing Order：RELEASED / AWAITING PRODUCTION**。这表示当前订单已经由用户确认生产稿并放行；仓库仍不虚构独立的 exhaustive SMT orientation PASS、hardware test、assembly fit、EMC/surge 或 system validation PASS。
-- 上述 `AWAITING PRODUCTION` 是 2026-09-05 制造订单放行时的**历史状态**，不是当前实物状态。当前 PCB/PCBA 已完成实际硬件调试：已完成 24 V 上电、板上 3.3 V 检查、ST-Link 烧录、上位机串口通信，以及工业 I/O 基本控制与端子电压检查；实际过程和证据边界见 [docs/bringup_log.md](docs/bringup_log.md)。
-- 当前 Bring-up 结论限于已确认的基本上电、烧录、通信和工业 I/O 功能调试。尚无完整的逐通道记录、量化输入电流、纹波/启动波形、负载与异常供电、EMC/浪涌或隔离耐压证据，因此这些项目不声明 PASS，也不形成完整系统验收结论。
-- 最新完整 schematic PDF 与 BOM 已归档到 `hardware/outputs/`，作为 Stage 4 formal-review evidence；Hardware Revision 仍为 `TBD`。
-- Stage 5 minor mechanical note 仍保留：后续用 3D / courtyard / 实际机械 evidence 确认 `CN5` 与右下 M3 螺钉/垫片/可拔插端子 envelope；当前 evidence 不将其视为 PCB fabrication blocker。
+## Hardware Gallery
 
-## 项目事实入口（Project Facts）
+| PCB Top | PCB Bottom |
+| --- | --- |
+| ![PCB Top](hardware/images/pcb_top.png) | ![PCB Bottom](hardware/images/pcb_bottom.png) |
 
-- [需求基线（Requirements Baseline）](requirements.md)
-- [系统框图（Block Diagram）](block_diagram.md)
-- [设计说明（Design Notes）](design_notes.md)
-- [资料索引（Reference Index）](references.md)
-- [关键器件选型记录（Component Selection Plan）](docs/component_selection_plan.md)
+![Rev.C PCBA](hardware/images/pcba.jpg)
 
-## 仓库导航（Repository Navigation）
+## Engineering Highlights
 
-- [Project Runtime Rules](PROJECT_RULES.md)
-- [Stage 文档职责](docs/README.md)
-- [PCB Design Rules](docs/pcb_design_rules.md)
-- [PCB Review](docs/pcb_review.md)
-- [Bring-up 记录与推荐测试计划](docs/bringup_log.md)
-- [Hardware source 与 Evidence 职责](hardware/README.md)
-- [本地资料职责](references/README.md)
-- [Project Validator](scripts/validate_project_repository.py)
+- 24 V industrial input with reverse-polarity and input protection, plus onboard 24 V → 3.3 V conversion
+- Onboard STM32F103C8T6 minimum system with SWD, reset, BOOT0, HSE, and accessible 3V3/GND test points
+- USB-C + CH340C USB-UART with ISO7721 digital isolation and separated USB-side / machine-side ground domains
+- Eight CM35 control outputs and eight CM35 status inputs for 24 V industrial I/O
+- Four photoelectric-sensor interfaces with field-side power and NO / NC signal paths
+- Two-layer PCB layout, signal/power routing, copper pours, isolation corridor, mask normalization, and production-oriented silkscreen
+- JLCPCB fabrication / top-side PCBA workflow, followed by board bring-up and practical functional debugging
 
-## 下一步（Next Step）
+## Rev.C Hardware Evolution
 
-当前 PCB / PCBA 已完成实际硬件调试。设计侧不因本次记录同步重新打开已收口的 routing、polygon、mask、BOM 或 placement；后续工作是按 [Bring-up 记录与推荐测试计划](docs/bringup_log.md) 补充规范、可追溯的量化测试证据。
+Rev.C is the third hardware iteration and the current physical implementation. Compared with the previous revision, it:
 
-历史制造状态（2026-09-05 订单放行时）：
+- adds photoelectric-sensor field power and NO / NC signal interfaces;
+- adds onboard USB-C and CH340C USB-UART communication;
+- adds ISO7721 isolation between USB-side and machine-side domains;
+- replaces the external STM32 minimum-system module with an onboard STM32 minimum system; and
+- adds or improves 24 V reverse-polarity, input, and onboard power-conversion protection boundaries.
 
-```text
-JLCPCB production artwork: CONFIRMED
-PCB fabrication order:     RELEASED
-PCBA order:                 RELEASED
-Manufacturing state then:   AWAITING PRODUCTION
-```
+Detailed revision scope and evidence limits are recorded in [Hardware Revision History](docs/revision_history.md).
 
-当前实物状态：
+## Bring-up and Validation Status
 
-```text
-24 V power-on / 3.3 V check: COMPLETED (basic check; no quantified report)
-STM32 programming:           COMPLETED
-Host UART communication:    COMPLETED (basic functional debug)
-Industrial I/O debug:       COMPLETED (basic control/voltage behavior)
-Formal quantified testing:  NOT YET DOCUMENTED
-```
+### Confirmed
 
-建议依次补充电源量化、USB-UART 供电时序、全部工业 I/O 和 4 路传感器 NO/NC 的逐通道记录，再根据明确的系统限值形成正式 `docs/test_report.md`；本轮不新建该报告。
+- Rev.C PCB and assembled PCBA exist and are represented by the images above.
+- Basic 24 V power-on and board-level 3.3 V checking were completed.
+- STM32 programming through ST-Link was completed.
+- Host UART communication was completed at the basic functional-debug level.
+- Industrial I/O basic control and terminal-voltage behavior were debugged.
+- The board is currently in practical use.
 
-Current Project Stage remains **Stage 6 — Routing and Copper**; this documentation sync does not itself execute a Stage transition.
+### Not formally documented or claimed
+
+- Complete channel-by-channel quantitative testing
+- Quantified input current, startup waveform, ripple, or full-load characterization
+- Abnormal-supply qualification
+- EMC or surge PASS
+- Isolation-withstand PASS
+- Complete system acceptance PASS
+- Production qualification or product certification
+
+Rev.C has completed practical functional bring-up and is currently in use. Formal quantified validation remains bounded to the evidence documented in this repository; EMC/surge, isolation withstand, full electrical characterization, and complete system acceptance are not claimed. See the [Bring-up Record](docs/bringup_log.md) for the actual sequence, known results, limitations, and recommended future test plan.
+
+## Engineering Status and Evidence Boundaries
+
+- Requirements, component selection, module design, and formal schematic review records are retained in the repository. Stage 4 Formal Schematic Review is recorded as `PASS / CLOSED`, but the project does not claim full-board ERC PASS.
+- Full-board placement was closed against the 100 mm × 80 mm mechanical baseline. Stage 6 signal/power routing, polygons, isolation corridor, and finalization work reached final-review level; the lifecycle stage remains **Stage 6 — Routing and Copper**.
+- Final DRC on 2026-09-04 reported **0 warnings / 76 rule violations**. The remaining violations were classified as 4 intentional M3 NPTH/keepout scope collisions, 66 minimum solder-mask slivers, and 6 intentional HSE GND-guard net antennae.
+- **Final DRC was not zero-violation.** The remaining findings were categorized and reviewed, but this repository does not declare a formal `DRC PASS`.
+- JLCPCB production artwork and the PCB/PCBA order were released in September 2026. That historical release state does not replace current hardware-test evidence.
+- A minor mechanical note remains for confirming the CN5 / lower-right M3 fastener and removable-terminal envelope with 3D, courtyard, or physical mechanical evidence.
+
+## Repository Navigation
+
+| Area | Record |
+| --- | --- |
+| Requirements | [requirements.md](requirements.md) |
+| Block Diagram | [block_diagram.md](block_diagram.md) |
+| Design Notes | [design_notes.md](design_notes.md) |
+| Reference Index | [references.md](references.md) |
+| Component Selection | [docs/component_selection_plan.md](docs/component_selection_plan.md) |
+| Module Design | [docs/module_design/](docs/module_design/) |
+| Schematic Review | [docs/schematic_review.md](docs/schematic_review.md) |
+| PCB Design Rules | [docs/pcb_design_rules.md](docs/pcb_design_rules.md) |
+| PCB Review / DRC / Manufacturing Record | [docs/pcb_review.md](docs/pcb_review.md) |
+| Bring-up | [docs/bringup_log.md](docs/bringup_log.md) |
+| Revision History | [docs/revision_history.md](docs/revision_history.md) |
+| Hardware Sources and Evidence | [hardware/README.md](hardware/README.md) |
+| Altium Source Project | [hardware/altium_project/](hardware/altium_project/) |
+| Schematic PDF | [hardware/outputs/SCH_Schematic1_2026-09-01.pdf](hardware/outputs/SCH_Schematic1_2026-09-01.pdf) |
+| BOM | [hardware/outputs/BOM_Board1_Schematic1_2026-09-01.xlsx](hardware/outputs/BOM_Board1_Schematic1_2026-09-01.xlsx) |
+| Framework Binding | [FRAMEWORK.md](FRAMEWORK.md) |
+| Project Rules | [PROJECT_RULES.md](PROJECT_RULES.md) |
+| Project Validator | [scripts/validate_project_repository.py](scripts/validate_project_repository.py) |
+
+## Current Source and Evidence Set
+
+The current Rev.C Altium project source is versioned under `hardware/altium_project/`. The project file, schematic, PCB, and required project-local libraries are included; generated History, logs, previews, project outputs, manufacturing archives, and temporary files are excluded.
+
+The current Stage 4 schematic PDF and BOM remain under `hardware/outputs/`. Images are presentation and physical-hardware evidence; they do not independently prove connectivity, ERC/DRC status, isolation rating, or quantified electrical performance.
+
+## Next Evidence Work
+
+Future work can add traceable, quantified power measurements, USB-UART power-sequence checks, complete industrial-I/O and sensor channel records, and a formal test report with explicit limits. This portfolio finalization does not perform a Stage transition or convert recommended tests into completed results.

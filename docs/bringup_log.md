@@ -2,7 +2,7 @@
 
 Project: STM32 24V Industrial I/O Bridge
 
-Hardware Revision: TBD
+Hardware Revision: Rev.C
 
 Current Project Stage: see repository root `README.md`
 
@@ -20,6 +20,7 @@ Creating this record does not mean that a new hardware test session occurred, do
 ## A1. Current Bring-up Status
 
 - The physical PCB has completed actual hardware bring-up and practical debugging.
+- Rev.C is the third hardware iteration and is currently in practical use.
 - Basic 24 V power-on, board 3.3 V checking, STM32 programming, host communication, and industrial I/O functional debugging were performed.
 - A complete quantified test report has not been provided. There is no basis here for declaring every channel, power-integrity parameter, abnormal supply condition, EMC/surge requirement, isolation withstand requirement, or full system acceptance criterion PASS.
 - This documentation update records an already completed activity; it does not claim that another round of hardware testing was performed during the update.

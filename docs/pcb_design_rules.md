@@ -12,7 +12,7 @@ This file owns the Project PCB rule and routing/copper baseline. Stage 4 Formal 
 - Current BOM: `hardware/outputs/BOM_Board1_Schematic1_2026-09-01.xlsx`.
 - Formal schematic review: `docs/schematic_review.md`.
 - Placement / routing / copper review record: `docs/pcb_review.md`.
-- Hardware Revision: `TBD`.
+- Hardware Revision: `Rev.C`.
 - User-provided Altium screenshots and exported DRC reports are valid interactive engineering evidence.
 - The current `.PcbDoc` remains the object-level PCB implementation authority.
 - No Gerber/manufacturing-output PASS, hardware-test PASS, EMC/surge result, or final manufacturing release is claimed here.
