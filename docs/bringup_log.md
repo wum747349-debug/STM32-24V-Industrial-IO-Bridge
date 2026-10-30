@@ -22,6 +22,7 @@ Creating this record does not mean that a new hardware test session occurred, do
 - The physical PCB has completed actual hardware bring-up and practical debugging.
 - Rev.C is the third hardware iteration and is currently in practical use.
 - Basic 24 V power-on, board 3.3 V checking, STM32 programming, host communication, and industrial I/O functional debugging were performed.
+- A separate 2026-10-30 oscilloscope session observed periodic 3.3 V buck-output ripple at approximately the nominal switching period; details and limitations are recorded in A4 below.
 - A complete quantified test report has not been provided. There is no basis here for declaring every channel, power-integrity parameter, abnormal supply condition, EMC/surge requirement, isolation withstand requirement, or full system acceptance criterion PASS.
 - This documentation update records an already completed activity; it does not claim that another round of hardware testing was performed during the update.
 
@@ -42,14 +43,40 @@ The following sequence is limited to the user's confirmed account. No unconfirme
 | Item | Confirmed actual result | Evidence limitation |
 | --- | --- | --- |
 | Machine-side power | The board was powered from a 24 V DC supply. | Exact input voltage at the terminals, current limit, steady-state current, inrush, load, and temperature were not recorded. |
-| 3.3 V rail | The board 3.3 V rail was checked before connecting ST-Link. | No exact voltage, tolerance, ripple, startup waveform, or load-step record was provided. |
+| 3.3 V rail | The board 3.3 V rail was checked before connecting ST-Link; a separate 2026-10-30 ripple observation was subsequently reported. | No exact DC voltage/tolerance, defined-load or load-step result, or startup waveform was recorded; see A4 for the bounded ripple measurement. |
 | STM32 | Firmware was programmed through ST-Link. | Firmware identity, programming log, reset/BOOT matrix, and long-duration runtime evidence were not provided. |
 | Host communication | Host serial communication and basic functional debugging were performed. | Enumeration details, baud rate, error-rate/duration data, power-sequence matrix, and isolation performance were not provided. |
 | Industrial control | Host commands were exercised and corresponding motion-controller input-terminal voltages were checked. | The tested channel subset and a complete channel-by-channel result table were not provided. |
 | Active-Low behavior | Approximately 24 V was observed as inactive and approximately 0 V as active. | These are approximate behavioral observations, not precision limits or a complete electrical characterization. |
 | CM35 status inputs and sensors | No additional actual result is recorded here. | No complete CN5 OUT1–OUT8 or four-sensor NO/NC channel record was provided; these items are not marked PASS. |
 
-No test date, operator, serial number, exact measurement value, instrument model, current, ripple, waveform, abnormal-power result, EMC/surge result, isolation-withstand result, or complete system PASS is inferred where none was supplied.
+The earlier basic functional Bring-up has no separately recorded test date, instrument model, input/load current, or complete quantified test report. The later dated ripple observation is recorded in A4; neither event establishes abnormal-power, EMC/surge, isolation-withstand, or full-system PASS.
+
+## A4. 2026-10-30 — 3.3 V Buck Output Ripple (Basic Oscilloscope Observation)
+
+**Evidence type:** user-reported physical measurement with oscilloscope-screen photographs supplied in the review conversation. This is a representative operating-point observation, **not** a full-load, full-bandwidth, or production qualification result. Photographs were supplied in the conversation but have not been archived as repository image files in this update.
+
+| Item | Recorded condition / observation |
+| --- | --- |
+| Board / converter | Rev.C; LMR36510FADDAR synchronous buck, nominal 24 V → 3.3 V |
+| Design values (not separately measured here) | fSW 400 kHz nominal; L1 22 µH; C14/C15/C16 each 22 µF nominal |
+| Instrument | RIGOL DS1102E (100 MHz, 1 GSa/s rated) |
+| Probe contact | Probe tip on C16 `3V3` pad; short ground spring on nearby C14 GND; handheld contact |
+| Probe / acquisition | 1×; AC coupling; reported 20 MHz bandwidth limit; normal sample acquisition |
+| Main high-frequency observation | Vertical 2 mV/div; horizontal 2 µs/div; Vpp approximately **4.56 mV** in a representative capture; repeated observations approximately **4–5 mVpp** |
+| Period / frequency | Approximately 2.5 µs periodic features / approximately 400 kHz by observation and additional automatic-frequency readings; frequency readout sometimes fluctuated |
+| Waveform characteristics | Periodic slopes with narrow peaks/spikes superimposed |
+| Input / output load | Nominal 24 V source, actual board-mounted loads in operation; exact terminal input voltage and 3V3 load current were not logged; no additional calibrated load |
+| Longer-window observation | AC coupling, 2 mV/div, 10 ms/div (~100 ms across 10 divisions): dense high-frequency trace; no obvious regular low-frequency periodic drop or oscillation observed in this display |
+| Earlier setup | A transient approximately 7.2 mVpp result during unstable probing was seen; not chosen as representative |
+
+**Interpretation and limits:**
+
+- Nominal fSW = 400 kHz implies `T ≈ 1/fSW = 2.5 µs`; the observed periodic output ripple is broadly consistent with the switching time scale, but measuring ripple at the output does not independently prove the switch-node waveform, duty cycle, or every-cycle control behavior.
+- An oscilloscope cursor interval of approximately 20.56 µs (reciprocal ~48.63 kHz) shown in one photograph spans multiple ripples; **it is not a single switching period**. The ~400 kHz conclusion relies on observed adjacent repetition periods and other readings, not on that cursor reciprocal.
+- The reported 20 MHz bandwidth limit, 1× probe bandwidth/loading, handheld contact and nearby-but-separate capacitor pads can all influence the Vpp reading. The reported 4.56 mVpp is one representative capture, not a statistically bounded specification or the maximum full-bandwidth spike.
+- The ~100 ms long-timebase view does not exclude low-frequency drift, rare transients, aliasing or other noise; AC coupling also removes DC behavior.
+- No known controlled output-current load, load regulation, load step, full-load ripple, detailed temperature measurement or startup measurement was conducted here. **No new overall power-stage PASS is claimed.**
 
 # Part B — Recommended Bring-up & Hardware Test Plan
 
