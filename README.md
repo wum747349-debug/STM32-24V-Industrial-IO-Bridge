@@ -59,6 +59,7 @@ Detailed revision scope and evidence limits are recorded in [Hardware Revision H
 
 - Rev.C PCB and assembled PCBA exist and are represented by the images above.
 - Basic 24 V power-on and board-level 3.3 V checking were completed.
+- On 2026-10-30, an oscilloscope observation of 3.3 V output ripple showed a representative ~4.56 mVpp (roughly 4–5 mVpp) and ~2.5 µs periodic features, broadly consistent with the LMR36510FADDAR nominal 400 kHz frequency, under actual board-mounted but unquantified load; see Bring-up A4.
 - STM32 programming through ST-Link was completed.
 - Host UART communication was completed at the basic functional-debug level.
 - Industrial I/O basic control and terminal-voltage behavior were debugged.
@@ -67,7 +68,7 @@ Detailed revision scope and evidence limits are recorded in [Hardware Revision H
 ### Not formally documented or claimed
 
 - Complete channel-by-channel quantitative testing
-- Quantified input current, startup waveform, ripple, or full-load characterization
+- Quantified input current, startup waveform, controlled-load/full-load ripple characterization, or full-load performance characterization
 - Abnormal-supply qualification
 - EMC or surge PASS
 - Isolation-withstand PASS
