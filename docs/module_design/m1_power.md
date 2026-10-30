@@ -6,7 +6,7 @@
 - Current M1 schematic / PCB implementation disposition: **CLOSED at design-review level**. The user completed the final Q25 schematic-symbol D/G/S ↔ PowerDI3333-8 footprint-pad ↔ manufacturer-pinout check in Altium; SR-M1-001 is closed.
 - A Stage 6 corrective review on 2026-09-04 also confirmed the LMR36510 enable / power-good handling: `EN` is tied to `24V_PROTECTED`, and unused `PG` is tied to `GND` rather than left floating.
 - Stage 4 Formal Schematic Review remains **PASS / CLOSED** as the historical gate; the later corrective delta is documented here and in `docs/schematic_review.md`.
-- Actual hardware bring-up has since included 24 V board power and a practical check of the 3.3 V test point before ST-Link connection. See [`docs/bringup_log.md`](../bringup_log.md). This does not add an exact voltage, input-current, ripple, startup, load, thermal, abnormal-supply, surge, or EMC result and is not a complete power-stage PASS.
+- Actual hardware bring-up has included 24 V board power and a practical 3.3 V check before ST-Link connection. A separate 2026-10-30 scope session recorded a representative ~4.56 mVpp periodic 3.3 V output ripple (approximately 4–5 mVpp) under unquantified board load; see [`docs/bringup_log.md` A4](../bringup_log.md). Exact DC voltage/tolerance, input or load current, controlled-load ripple, startup, thermal, abnormal-supply, surge and EMC remain unverified; this is not a complete power-stage PASS.
 
 ## Structured Connection Facts
 
@@ -65,7 +65,7 @@ P1 is the current capture choice, not final enclosure/mechanical approval. No ad
 ## Remaining Validation
 
 - Full-board startup/inrush, quantified steady-state input current, and F1 time-current coordination are unmeasured.
-- C14/C15/C16 effective capacitance under DC bias, diode/MOSFET loss, ripple, and thermal behavior remain to be checked as applicable.
+- C14/C15/C16 effective capacitance under DC bias, diode/MOSFET loss, controlled-load/full-bandwidth ripple, and thermal behavior remain to be checked as applicable.
 - Preserve the user-verified Q25 D/G/S ↔ PowerDI3333-8 pad ↔ manufacturer-pinout mapping during any later PCB edit; `GND_IN_RAW` must not bypass Q25 into PCB `GND`.
 - The released assembly has powered and its 3.3 V rail has been checked at a basic functional level; quantified startup behavior, measured power integrity, load behavior, and abnormal-input behavior remain pending.
 - No source-impedance, surge-waveform, IEC, or other compliance result is claimed.
